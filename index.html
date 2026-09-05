@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101826">
+  <meta name="description" content="パレット荷役、重量、重心、破損防止、荷崩れ防止、安全売上を学ぶ実践型フォークリフト・トラック積み込みゲーム">
+  <title>積載研修：積めるもんなら積んでみろ！</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <section id="homeScreen" class="home-screen is-open" aria-label="ゲームホームページ">
+    <header class="home-nav">
+      <a class="home-brand" href="#homeTop" aria-label="ホーム上部へ">
+        <span aria-hidden="true">積</span>
+        <strong>積載研修</strong>
+        <small>LOADING ACADEMY</small>
+      </a>
+      <nav aria-label="ホームページ内メニュー">
+        <a href="#homeLearn">学べること</a>
+        <a href="#homeFlow">遊び方</a>
+        <button id="homeMissionButton" type="button">ミッション選択</button>
+      </nav>
+    </header>
+
+    <div id="homeTop" class="home-content">
+      <section class="home-hero">
+        <div class="home-hero-copy">
+          <p class="home-kicker">FORKLIFT &amp; TRUCK LOADING SIMULATOR</p>
+          <h1>積み方ひとつで、<br><em>安全も利益も変わる。</em></h1>
+          <p class="home-lead">パレットを正しくすくい、重量と重心を読み、壊れ物を守って固定する。現場で必要な積み込みの基本を、失敗から学べる実践型ブラウザゲーム。</p>
+          <div class="home-actions">
+            <button id="homeStartButton" class="home-primary" type="button">無料で研修を始める <span>→</span></button>
+            <a class="home-secondary" href="#homeFlow">遊び方を見る</a>
+          </div>
+          <div class="home-facts" aria-label="ゲーム概要">
+            <span><b>2</b>つの作業工程</span>
+            <span><b>5</b>ミッション</span>
+            <span><b>¥145,000</b>安全売上目標</span>
+          </div>
+        </div>
+        <div class="home-hero-visual" aria-label="フォークリフトと積載トラックのイメージ">
+          <div class="visual-grid" aria-hidden="true"></div>
+          <span class="visual-tag tag-pickup">01 / PALLET PICKUP</span>
+          <span class="visual-tag tag-loading">02 / LOAD PLANNING</span>
+          <img class="home-truck" src="assets/images/truck-side-cutaway.png" alt="側面から荷室が見えるトラック">
+          <img class="home-cargo" src="assets/images/cargo-pallet-cartons.png" alt="木製パレットに積まれた貨物">
+          <img class="home-forklift" src="assets/images/forklift-side-operator.png" alt="ヘルメットを着用した運転者が乗るフォークリフト">
+          <div class="visual-status"><i></i><span>安全確認</span><strong>READY</strong></div>
+        </div>
+      </section>
+
+      <section id="homeLearn" class="home-section">
+        <div class="home-section-heading">
+          <p class="home-kicker">WHAT YOU LEARN</p>
+          <h3>ゲームで身につく、積み込みの基本。</h3>
+          <p>速さだけではクリアできません。安全に届けて利益を残すまでが研修です。</p>
+        </div>
+        <div class="home-feature-grid">
+          <article><span>01</span><h4>パレット荷役</h4><p>爪高と差込深さを確認。爪突き事故を防ぎ、荷を低く保って搬送します。</p></article>
+          <article><span>02</span><h4>重量・重心</h4><p>最大積載量を守り、重量物を床へ。前後の偏りと高重心を整えます。</p></article>
+          <article><span>03</span><h4>破損・荷崩れ防止</h4><p>ガラスやペットケージを発泡材、コンパネ、ベルトで適切に守ります。</p></article>
+          <article><span>04</span><h4>安全売上</h4><p>運賃から資材費、破損費、遅延損失を計算。多く積むだけでは利益になりません。</p></article>
+        </div>
+      </section>
+
+      <section id="homeFlow" class="home-section home-flow-section">
+        <div class="home-section-heading">
+          <p class="home-kicker">HOW TO PLAY</p>
+          <h3>荷役から配送まで、4ステップ。</h3>
+        </div>
+        <ol class="home-flow">
+          <li><b>1</b><div><strong>すくう</strong><p>爪をパレット穴へ合わせ、75%以上まで静かに差し込みます。</p></div></li>
+          <li><b>2</b><div><strong>運ぶ</strong><p>持ち上げた荷を低い位置に保ち、出荷バースまで後退搬送します。</p></div></li>
+          <li><b>3</b><div><strong>積む・固定する</strong><p>トラック側面図へ配置し、重量・重心・配送順と固定を整えます。</p></div></li>
+          <li><b>4</b><div><strong>点検して稼ぐ</strong><p>発車前点検を通し、安全に届いた運賃で目標金額を目指します。</p></div></li>
+        </ol>
+      </section>
+
+      <section class="home-cta">
+        <div><p class="home-kicker">READY FOR LOADING?</p><h3>安全に積んで、利益を残せ。</h3></div>
+        <button id="homeFooterStart" class="home-primary" type="button">ミッションを選ぶ <span>→</span></button>
+      </section>
+    </div>
+
+    <footer class="home-footer">
+      <span>積載研修 / PRACTICAL LOADING TRAINING</span>
+      <span>NO DOWNLOAD · NO LOGIN · BROWSER GAME</span>
+    </footer>
+  </section>
+
+  <main class="app" aria-label="積めるもんなら積んでみろ！">
+    <header class="site-header">
+      <button id="gameHomeButton" class="brand-mark" type="button" aria-label="ホームページへ戻る">積</button>
+      <div>
+        <p class="eyebrow">PRACTICAL LOADING TRAINING</p>
+        <h1>積めるもんなら<span>積んでみろ！</span></h1>
+      </div>
+      <div id="campaignBadge" class="campaign-badge" aria-label="本日の売上目標">
+        <small>本日の安全売上</small>
+        <strong id="campaignTotal">¥0</strong>
+        <span id="campaignTarget">/ ¥145,000</span>
+      </div>
+      <button id="soundButton" class="sound-button" type="button" aria-label="音のオン・オフ">音 ON</button>
+    </header>
+
+    <section class="game-frame" aria-label="ゲーム画面">
+      <div id="canvasWrap" class="canvas-wrap">
+        <canvas id="gameCanvas" width="1280" height="720" aria-label="パレット荷役とトラック積み込みゲーム"></canvas>
+        <div id="phaseIndicator" class="phase-indicator" aria-label="作業工程"></div>
+
+        <aside id="dialoguePanel" class="dialogue-panel" aria-live="polite">
+          <div id="speakerAvatar" class="speaker-avatar" aria-hidden="true">叉</div>
+          <div class="dialogue-copy">
+            <span id="speakerName">積載ナビ</span>
+            <p id="dialogueText">爪先を見て停止。パレット穴へ水平に差し込みます。</p>
+          </div>
+        </aside>
+
+        <div id="toast" class="toast" role="status" aria-live="polite"></div>
+        <div class="portrait-hint" aria-hidden="true">
+          <span>↻</span>
+          <strong>横向きがおすすめです</strong>
+          <small>スマートフォンを横向きにすると遊びやすくなります。</small>
+        </div>
+      </div>
+
+      <nav class="controls" aria-label="ゲーム操作">
+        <div class="control-group">
+          <button id="rotateButton" class="control-button control-accent" type="button"><kbd>R</kbd> 90°回転</button>
+          <button id="undoButton" class="control-button" type="button"><kbd>Z</kbd> ひとつ戻す</button>
+          <button id="restartButton" class="control-button" type="button">最初から</button>
+        </div>
+        <div class="control-group material-group" aria-label="荷崩れ防止資材">
+          <button id="panelButton" class="control-button material-button panel-button" type="button"><kbd>1</kbd> コンパネ <span id="panelCount">0</span></button>
+          <button id="foamButton" class="control-button material-button foam-button" type="button"><kbd>2</kbd> 発泡材 <span id="foamCount">0</span></button>
+          <button id="strapButton" class="control-button material-button strap-button" type="button"><kbd>3</kbd> ベルト <span id="strapCount">0</span></button>
+        </div>
+        <div class="control-group">
+          <button id="helpButton" class="control-button" type="button">積み方メモ</button>
+          <button id="inspectButton" class="control-button inspect-button" type="button"><kbd>I</kbd> 発車前点検</button>
+          <button id="departButton" class="control-button depart-button" type="button">出発する <span>→</span></button>
+        </div>
+      </nav>
+    </section>
+
+    <p class="quick-tip"><span>2画面操作</span> ①倉庫：黄色いハンドルで爪高を合わせ、車体を前進・75%以上差して左へ搬送　②荷台：運んだパレットを積む → 固定 → 点検 → 出発。</p>
+  </main>
+
+  <section id="startScreen" class="screen-overlay" aria-label="ステージ選択">
+    <div class="start-card">
+      <p class="eyebrow">LOADING ACADEMY / 5 MISSIONS</p>
+      <h2>安全に積んで、<br><em>利益を残せ。</em></h2>
+      <p class="start-lead">パレットを正しくすくって運ぶ。重量を守る。重心を整える。壊れ物を守り、固定する。安全に届いた運賃だけが、本当の売上です。</p>
+      <div id="campaignSummary" class="campaign-summary"></div>
+      <div id="stageGrid" class="stage-grid"></div>
+      <div class="start-footer">
+        <button id="homeBackButton" type="button">← ホームへ戻る</button>
+        <span>NO DOWNLOAD / NO LOGIN</span>
+        <button id="resetProgressButton" type="button">記録をリセット</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <button id="modalClose" class="modal-close" type="button" aria-label="閉じる">×</button>
+      <p id="modalKicker" class="eyebrow">LOADING REPORT</p>
+      <h2 id="modalTitle">確認</h2>
+      <div id="modalBody" class="modal-body"></div>
+      <div id="modalActions" class="modal-actions"></div>
+    </div>
+  </section>
+
+  <script src="js/stages.js" defer></script>
+  <script src="js/collision.js" defer></script>
+  <script src="js/scoring.js" defer></script>
+  <script src="js/audio.js" defer></script>
+  <script src="js/ui.js" defer></script>
+  <script src="js/game.js" defer></script>
+  <script src="js/input.js" defer></script>
+  <script src="js/main.js" defer></script>
+</body>
+</html>
