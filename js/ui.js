@@ -6,6 +6,7 @@
   let toastTimer = null;
   let progress = loadProgress();
   let modalCloseHandler = null;
+  let heroTimer = null;
 
   function fallbackProgress() {
     return { unlocked: 1, completed: [], bestScores: {}, bestRanks: {}, bestEarnings: {}, sound: true };
@@ -50,7 +51,7 @@
     ["homeScreen", "homeStartButton", "homeMissionButton", "homeFooterStart", "homeBackButton", "gameHomeButton",
       "startScreen", "stageGrid", "modal", "modalKicker", "modalTitle", "modalBody", "modalActions", "modalClose",
       "dialoguePanel", "speakerAvatar", "speakerName", "dialogueText", "toast", "soundButton", "resetProgressButton",
-      "campaignBadge", "campaignTotal", "campaignTarget", "campaignSummary"]
+      "campaignBadge", "campaignTotal", "campaignTarget", "campaignSummary", "editionBadge"]
       .forEach(function (id) { els[id] = document.getElementById(id); });
 
     Sfx.setEnabled(progress.sound !== false);
@@ -107,7 +108,89 @@
         ]
       });
     });
+    initHeroCarousel();
+    if (window.CommunityRevenue) window.CommunityRevenue.init();
     renderStageGrid();
+    applyEditionMode();
+  }
+
+  function initHeroCarousel() {
+    if (typeof document.querySelectorAll !== "function") return;
+    const carousel = document.getElementById("homeHero");
+    const slides = Array.from(document.querySelectorAll("[data-hero-slide]"));
+    const captions = Array.from(document.querySelectorAll("[data-hero-caption]"));
+    const dots = Array.from(document.querySelectorAll("[data-hero-dot]"));
+    const indexLabel = document.getElementById("homeHeroIndex");
+    if (!carousel || slides.length < 2) return;
+    let current = 0;
+    const reducedMotion = Boolean(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+    function showSlide(next) {
+      current = (next + slides.length) % slides.length;
+      slides.forEach(function (slide, index) {
+        const active = index === current;
+        slide.classList.toggle("is-active", active);
+        slide.setAttribute("aria-hidden", String(!active));
+      });
+      captions.forEach(function (caption, index) { caption.classList.toggle("is-active", index === current); });
+      dots.forEach(function (dot, index) {
+        const active = index === current;
+        dot.classList.toggle("is-active", active);
+        dot.setAttribute("aria-pressed", String(active));
+      });
+      if (indexLabel) indexLabel.textContent = String(current + 1).padStart(2, "0") + " / " + String(slides.length).padStart(2, "0");
+    }
+
+    function stopCarousel() {
+      if (heroTimer) window.clearInterval(heroTimer);
+      heroTimer = null;
+    }
+
+    function startCarousel() {
+      stopCarousel();
+      if (reducedMotion) return;
+      heroTimer = window.setInterval(function () { showSlide(current + 1); }, 6000);
+    }
+
+    dots.forEach(function (dot) {
+      dot.addEventListener("click", function () {
+        showSlide(Number(dot.getAttribute("data-hero-dot")) || 0);
+        startCarousel();
+      });
+    });
+    carousel.addEventListener("mouseenter", stopCarousel);
+    carousel.addEventListener("mouseleave", startCarousel);
+    carousel.addEventListener("focusin", stopCarousel);
+    carousel.addEventListener("focusout", startCarousel);
+    if (typeof document.addEventListener === "function") {
+      document.addEventListener("visibilitychange", function () {
+        if (document.hidden) stopCarousel();
+        else startCarousel();
+      });
+    }
+    showSlide(0);
+    startCarousel();
+  }
+
+  function applyEditionMode() {
+    let edition = "";
+    try {
+      const search = window.location && window.location.search ? window.location.search : "";
+      edition = new URLSearchParams(search).get("view") || "";
+    } catch (error) {}
+    const coarsePointer = !edition && window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+    const compactScreen = !edition && typeof window.innerWidth === "number" && window.innerWidth <= 900;
+    const mobile = edition === "mobile" || Boolean(coarsePointer && compactScreen);
+    const web = edition === "web";
+    if (document.body && document.body.classList) {
+      document.body.classList.toggle("mobile-game", mobile);
+      document.body.classList.toggle("web-game", web);
+    }
+    if (els.editionBadge) {
+      els.editionBadge.textContent = mobile ? "MOBILE EDITION" : "WEB EDITION";
+      els.editionBadge.classList.toggle("is-mobile", mobile);
+    }
+    if (mobile || web) showStart();
   }
 
   function updateSoundButton() {
@@ -167,7 +250,7 @@
   function dialogue(text, speaker) {
     const boss = speaker === "boss";
     els.speakerAvatar.textContent = boss ? "責" : "叉";
-    els.speakerAvatar.style.background = boss ? "#ffbd59" : "#ff6b4a";
+    els.speakerAvatar.style.background = boss ? "#4aa8ff" : "#24d391";
     els.speakerName.textContent = boss ? "現場責任者" : "積載ナビ";
     els.dialogueText.textContent = text;
     els.dialoguePanel.classList.remove("is-hidden");
@@ -214,7 +297,7 @@
 
   function showHelp(stage) {
     const rules = [
-      ["1", "倉庫画面：荷の手前で停止し、黄色い昇降ハンドルで爪先をパレット差込口の中央へ合わせる。"],
+      ["1", "倉庫画面：荷の手前で停止し、青い昇降ハンドルで爪先をパレット差込口の中央へ合わせる。"],
       ["穴", "車体を静かに前進。フォークを75%以上差し込んだ時だけ持上げられる。高さを外して押すと爪突き事故。"],
       ["低", "持上げ後は荷を低く保ち、左の出荷バースへ後退搬送する。"],
       ["2", "積付け画面：倉庫から運んだパレットだけを、側面図のトラック荷室へドラッグして配置する。"],
@@ -287,6 +370,12 @@
 
   function showResult(stage, result, handlers) {
     recordResult(stage.id, result);
+    if (result.passed && window.CommunityRevenue) {
+      if (!result.communityCompletionId) {
+        result.communityCompletionId = "delivery-" + stage.id + "-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 14);
+      }
+      window.CommunityRevenue.submit(result.netRevenue, stage.id, result.communityCompletionId);
+    }
     const materialDetail = "コンパネ" + result.usage.panel + "・発泡材" + result.usage.foam + "・ベルト" + result.usage.strap;
     const rows = [
       ["積載", result.placed.length + " / " + (result.placed.length + result.unplaced) + "個"],

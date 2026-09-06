@@ -37,9 +37,14 @@
       this.forkliftImage = new Image();
       this.forkliftImage.src = "assets/images/forklift-side-operator.png";
       this.truckImage = new Image();
-      this.truckImage.src = "assets/images/truck-side-cutaway.png";
+      this.truckImage.src = "assets/images/truck-side-green.png";
+      this.pickupTruckImage = new Image();
+      this.pickupTruckImage.src = "assets/images/yard-truck-destination.png";
+      this.pickupBuildingImage = new Image();
+      this.pickupBuildingImage.src = "assets/images/yard-company-entrance.png";
       this.cargoImage = new Image();
       this.cargoImage.src = "assets/images/cargo-pallet-cartons.png";
+      this.mobilePad = { drive: 0, lift: 0 };
       this.forklift = {
         x: 300,
         targetX: 300,
@@ -93,9 +98,10 @@
       this.forkAccidents = 0;
       this.transportSequence = 0;
       this.pickupHintShown = false;
+      this.stopVirtualPad();
       this.releaseForklift();
       this.selectPickupCargo(this.packages[0]);
-      UI.dialogue("まず倉庫で荷役。黄色い昇降ハンドルで爪を穴へ合わせ、車体を前進させます。", "rookie");
+      UI.dialogue("まず倉庫で荷役。青い昇降ハンドルで爪を穴へ合わせ、車体を前進させます。", "rookie");
       UI.toast("MISSION 0" + this.stage.id + "　" + this.stage.objective);
       this.updateControls();
     }
@@ -322,7 +328,7 @@
       this.forklift.targetForkY = 490;
       this.forklift.carrying = false;
       this.forklift.engagement = 0;
-      UI.dialogue(pkg.name + "。まず黄色いハンドルで爪の高さをパレット穴へ合わせます。", "rookie");
+      UI.dialogue(pkg.name + "。まず青いハンドルで爪の高さをパレット穴へ合わせます。", "rookie");
       this.updateControls();
     }
 
@@ -383,6 +389,7 @@
       this.forkAccidents += 1;
       this.flash = .72;
       this.drag = null;
+      this.stopVirtualPad();
       this.releaseForklift();
       Sfx.play(pkg.protectedCargo ? "glass" : "error");
       UI.toast("爪突き事故！ " + pkg.name + "を破損扱い・隔離しました。", true);
@@ -402,6 +409,7 @@
       delete pkg.forkOffsetX;
       delete pkg.forkOffsetY;
       this.drag = null;
+      this.stopVirtualPad();
       this.releaseForklift();
       Sfx.play("place");
       UI.toast(pkg.name + "を出荷バースへ運びました。");
@@ -416,6 +424,70 @@
       this.updateControls();
     }
 
+    stopVirtualPad() {
+      this.mobilePad.drive = 0;
+      this.mobilePad.lift = 0;
+      ["padDriveBack", "padDriveForward", "padForkUp", "padForkDown"].forEach(function (id) {
+        const button = document.getElementById(id);
+        if (button) button.classList.remove("is-pressed");
+      });
+    }
+
+    setVirtualControl(axis, value, pressed) {
+      if (axis !== "drive" && axis !== "lift") return;
+      if (this.mode !== "playing" || this.phase !== "pickup") {
+        this.mobilePad[axis] = 0;
+        return;
+      }
+      if (pressed) this.mobilePad[axis] = value;
+      else if (this.mobilePad[axis] === value) this.mobilePad[axis] = 0;
+    }
+
+    attemptPickup(pkg) {
+      if (!pkg || pkg.forkDamaged || this.forklift.forkedId) return false;
+      const check = this.palletForkCheck(pkg);
+      if (!check.weightOk) {
+        UI.toast("定格荷重1,500kgを超えています。", true);
+        return false;
+      }
+      if (!check.heightOk && check.penetration > 0) {
+        this.triggerForkAccident(pkg);
+        return false;
+      }
+      if (!check.valid) {
+        UI.toast(check.heightOk
+          ? "差し込みが浅いです（" + Math.round(check.ratio * 100) + "%）。75%以上まで静かに前進します。"
+          : "爪をパレット差込口の中央へ合わせてください。", true);
+        return false;
+      }
+      const fork = this.forkRect();
+      pkg.forkOffsetX = pkg.x - fork.x;
+      pkg.forkOffsetY = pkg.y - fork.y;
+      this.forklift.forkedId = pkg.id;
+      this.forklift.carrying = true;
+      this.forklift.engagement = check.ratio;
+      this.forklift.forkY -= 18;
+      this.forklift.targetForkY = this.forklift.forkY;
+      this.syncPickedCargo();
+      Sfx.play("place");
+      UI.toast("差込" + Math.round(check.ratio * 100) + "%・持上げOK。左へ後退して運びます。");
+      UI.dialogue("根元まで差し込み、5〜10cm持ち上げました。荷を低く保って後退します。", "rookie");
+      this.updateControls();
+      return true;
+    }
+
+    activateVirtualPickup() {
+      if (this.mode !== "playing" || this.phase !== "pickup") return;
+      const pkg = this.packages.find((item) => item.id === (this.forklift.forkedId || this.selectedId));
+      if (!pkg || pkg.forkDamaged) return;
+      if (this.forklift.forkedId) {
+        if (this.forklift.x <= 125) this.completeTransport(pkg);
+        else UI.toast("左の緑トラックまで後退してください。到着すると自動で搬送完了します。");
+        return;
+      }
+      this.attemptPickup(pkg);
+    }
+
     beginLoadingPhase() {
       const ready = this.packages.filter(function (pkg) { return pkg.transported && !pkg.forkDamaged; });
       if (!ready.length) {
@@ -426,6 +498,7 @@
       this.drag = null;
       this.selectedId = null;
       this.history = [];
+      this.stopVirtualPad();
       this.releaseForklift();
       this.layoutTray();
       UI.toast("SCREEN 2 / トラック積付け");
@@ -449,7 +522,7 @@
       }
       const pkg = this.hitTest(x, y);
       if (pkg && !pkg.transported && !pkg.forkDamaged && !this.forklift.forkedId) this.selectPickupCargo(pkg);
-      else if (active) UI.dialogue("車体を左右へ、黄色いハンドルを上下へドラッグします。", "rookie");
+      else if (active) UI.dialogue("車体を左右へ、青いハンドルを上下へドラッグします。", "rookie");
     }
 
     pickupPointerMove(x, y, pointerId) {
@@ -487,33 +560,7 @@
         else UI.toast("荷を15〜20cmの低い位置で保ち、左の出荷バースまで後退します。");
         return;
       }
-      const check = this.palletForkCheck(pkg);
-      if (!check.weightOk) {
-        UI.toast("定格荷重1,500kgを超えています。", true);
-        return;
-      }
-      if (!check.heightOk && check.penetration > 0) {
-        this.triggerForkAccident(pkg);
-        return;
-      }
-      if (!check.valid) {
-        UI.toast(check.heightOk
-          ? "差し込みが浅いです（" + Math.round(check.ratio * 100) + "%）。75%以上まで静かに前進します。"
-          : "爪をパレット差込口の中央へ合わせてください。", true);
-        return;
-      }
-      const fork = this.forkRect();
-      pkg.forkOffsetX = pkg.x - fork.x;
-      pkg.forkOffsetY = pkg.y - fork.y;
-      this.forklift.forkedId = pkg.id;
-      this.forklift.carrying = true;
-      this.forklift.engagement = check.ratio;
-      this.forklift.forkY -= 18;
-      this.forklift.targetForkY = this.forklift.forkY;
-      this.syncPickedCargo();
-      Sfx.play("place");
-      UI.toast("差込" + Math.round(check.ratio * 100) + "%・持上げOK。左へ後退して運びます。");
-      UI.dialogue("根元まで差し込み、5〜10cm持ち上げました。荷を低く保って後退します。", "rookie");
+      this.attemptPickup(pkg);
     }
 
     pointerDown(x, y, pointerId) {
@@ -855,7 +902,13 @@
       const foam = document.getElementById("foamButton");
       const strap = document.getElementById("strapButton");
       const phaseIndicator = document.getElementById("phaseIndicator");
+      const virtualPad = document.getElementById("virtualPad");
+      const pickupAction = document.getElementById("padPickupAction");
       if (!rotate) return;
+      if (document.body && document.body.classList) {
+        document.body.classList.toggle("is-pickup-phase", pickup);
+        document.body.classList.toggle("is-loading-phase", loading);
+      }
       rotate.disabled = !loading || !this.selected;
       undo.disabled = !loading || !this.history.length;
       restart.disabled = !(playing || this.mode === "event");
@@ -886,6 +939,23 @@
           "<span class=\"phase-step " + (this.phase === "pickup" ? "is-active" : "is-done") + "\"><b>1</b> パレット荷役</span>" +
           "<i>→</i>" +
           "<span class=\"phase-step " + (this.phase === "loading" ? "is-active" : "") + "\"><b>2</b> トラック積付け</span>";
+      }
+      if (virtualPad) virtualPad.hidden = !pickup;
+      ["padDriveBack", "padDriveForward"].forEach(function (id) {
+        const button = document.getElementById(id);
+        if (button) button.disabled = !pickup || !this.selected;
+      }, this);
+      ["padForkUp", "padForkDown"].forEach(function (id) {
+        const button = document.getElementById(id);
+        if (button) button.disabled = !pickup || !this.selected || Boolean(this.forklift.forkedId);
+      }, this);
+      if (pickupAction) {
+        const carrying = Boolean(this.forklift.forkedId);
+        pickupAction.disabled = !pickup || !this.selected;
+        pickupAction.classList.toggle("is-carrying", carrying);
+        pickupAction.innerHTML = carrying
+          ? "<b>運搬中</b><small>左トラックへ後退</small>"
+          : "<b>持上げ</b><small>差込75%以上で確定</small>";
       }
     }
 
@@ -930,12 +1000,36 @@
     }
 
     updateForklift(dt) {
+      this.stepVirtualPad(dt);
       const smoothing = 1 - Math.exp(-dt * 12);
       if (!this.forklift.carrying) {
         this.forklift.x += (this.forklift.targetX - this.forklift.x) * smoothing;
         this.forklift.forkY += (this.forklift.targetForkY - this.forklift.forkY) * smoothing;
       }
       this.forklift.baseY += (this.forklift.targetBaseY - this.forklift.baseY) * smoothing;
+    }
+
+    stepVirtualPad(dt) {
+      if (!this.mobilePad || this.mode !== "playing" || this.phase !== "pickup") return;
+      const pkg = this.packages.find((item) => item.id === (this.forklift.forkedId || this.selectedId));
+      if (!pkg || pkg.forkDamaged) return;
+
+      if (this.mobilePad.lift && !this.forklift.forkedId) {
+        this.forklift.forkY = clamp(this.forklift.forkY + this.mobilePad.lift * 105 * dt, 350, 536);
+        this.forklift.targetForkY = this.forklift.forkY;
+      }
+      if (!this.mobilePad.drive) return;
+
+      this.forklift.x = clamp(this.forklift.x + this.mobilePad.drive * 265 * dt, 58, 650);
+      this.forklift.targetX = this.forklift.x;
+      if (this.forklift.forkedId) {
+        this.syncPickedCargo();
+        if (this.mobilePad.drive < 0 && this.forklift.x <= 125) this.completeTransport(pkg);
+        return;
+      }
+      const check = this.palletForkCheck(pkg);
+      this.forklift.engagement = check.ratio;
+      if (check.penetration > 6 && !check.heightOk) this.triggerForkAccident(pkg);
     }
 
     draw() {
@@ -951,9 +1045,9 @@
 
     drawWarehouse(ctx) {
       const gradient = ctx.createLinearGradient(0, 0, 0, H);
-      gradient.addColorStop(0, "#18263a");
-      gradient.addColorStop(.58, "#101a29");
-      gradient.addColorStop(1, "#0b121d");
+      gradient.addColorStop(0, "#0d3946");
+      gradient.addColorStop(.58, "#082733");
+      gradient.addColorStop(1, "#051821");
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, W, H);
 
@@ -984,41 +1078,95 @@
       this.drawLoadingBay(ctx);
     }
 
+    drawCoverImage(ctx, image, x, y, width, height, focusX) {
+      if (!image || !image.complete || !image.naturalWidth) return false;
+      const sourceRatio = image.naturalWidth / image.naturalHeight;
+      const targetRatio = width / height;
+      let sourceWidth = image.naturalWidth;
+      let sourceHeight = image.naturalHeight;
+      let sourceX = 0;
+      let sourceY = 0;
+      if (sourceRatio > targetRatio) {
+        sourceWidth = image.naturalHeight * targetRatio;
+        sourceX = (image.naturalWidth - sourceWidth) * clamp(focusX == null ? .5 : focusX, 0, 1);
+      } else {
+        sourceHeight = image.naturalWidth / targetRatio;
+        sourceY = (image.naturalHeight - sourceHeight) * .5;
+      }
+      ctx.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
+      return true;
+    }
+
     drawPickupYard(ctx) {
-      ctx.fillStyle = "#111a25";
+      ctx.fillStyle = "#071b25";
       ctx.fillRect(0, 548, W, 172);
-      ctx.fillStyle = "#263443";
+      ctx.fillStyle = "#155265";
       ctx.fillRect(0, 570, W, 7);
-      ctx.fillStyle = "rgba(114,214,181,.08)";
-      ctx.fillRect(24, 164, 366, 386);
-      ctx.strokeStyle = "rgba(114,214,181,.46)";
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(24, 164, 390, 386);
+      ctx.clip();
+      if (!this.drawCoverImage(ctx, this.pickupTruckImage, 24, 164, 390, 386, 0)) {
+        ctx.fillStyle = "rgba(37,211,145,.1)";
+        ctx.fillRect(24, 164, 390, 386);
+      }
+      const truckShade = ctx.createLinearGradient(24, 164, 24, 550);
+      truckShade.addColorStop(0, "rgba(3,20,27,.18)");
+      truckShade.addColorStop(.62, "rgba(3,20,27,.12)");
+      truckShade.addColorStop(1, "rgba(3,20,27,.72)");
+      ctx.fillStyle = truckShade;
+      ctx.fillRect(24, 164, 390, 386);
+      ctx.restore();
+      ctx.strokeStyle = "rgba(37,211,145,.66)";
       ctx.lineWidth = 3;
       ctx.setLineDash([12, 8]);
-      ctx.strokeRect(30, 170, 354, 372);
+      ctx.strokeRect(30, 170, 378, 372);
       ctx.setLineDash([]);
-      ctx.fillStyle = "#72d6b5";
+      ctx.fillStyle = "#7ce8b8";
       ctx.font = "800 12px ui-monospace, 'Yu Gothic UI', sans-serif";
-      ctx.fillText("OUTBOUND BAY / 出荷バース", 48, 196);
-      ctx.fillStyle = "#8290a0";
+      ctx.fillText("DESTINATION / 緑トラック", 48, 196);
+      ctx.fillStyle = "#d2e8e7";
       ctx.font = "700 11px 'Yu Gothic UI', sans-serif";
-      ctx.fillText("正しくすくった荷を左へ後退搬送", 48, 218);
+      ctx.fillText("荷を低く保ち、左へ後退して積込口へ", 48, 218);
 
-      ctx.fillStyle = "rgba(255,189,89,.055)";
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(700, 164, 552, 386);
+      ctx.clip();
+      if (!this.drawCoverImage(ctx, this.pickupBuildingImage, 700, 164, 552, 386, 1)) {
+        ctx.fillStyle = "rgba(74,168,255,.09)";
+        ctx.fillRect(700, 164, 552, 386);
+      }
+      const buildingShade = ctx.createLinearGradient(700, 164, 700, 550);
+      buildingShade.addColorStop(0, "rgba(3,20,27,.22)");
+      buildingShade.addColorStop(.6, "rgba(3,20,27,.08)");
+      buildingShade.addColorStop(1, "rgba(3,20,27,.7)");
+      ctx.fillStyle = buildingShade;
       ctx.fillRect(700, 164, 552, 386);
-      ctx.strokeStyle = "rgba(255,189,89,.42)";
+      ctx.restore();
+      ctx.strokeStyle = "rgba(74,168,255,.56)";
       ctx.lineWidth = 2;
       ctx.strokeRect(706, 170, 540, 372);
-      ctx.fillStyle = "#ffbd59";
+      ctx.fillStyle = "#70bdff";
       ctx.font = "800 12px ui-monospace, 'Yu Gothic UI', sans-serif";
-      ctx.fillText("PICKUP POSITION / 積み取り位置", 724, 196);
-      ctx.fillStyle = "#8f9bac";
+      ctx.fillText("WAREHOUSE ENTRANCE / 荷物置場", 724, 196);
+      ctx.fillStyle = "#d2e8e7";
       ctx.font = "700 11px 'Yu Gothic UI', sans-serif";
-      ctx.fillText("① 黄色いハンドルで高さ調整　② 車体を前進　③ 75%以上で持上げ", 724, 218);
+      ctx.fillText("① 青いハンドルで高さ調整　② 車体を前進　③ 75%以上で持上げ", 724, 218);
+
+      ctx.fillStyle = "rgba(6,31,43,.72)";
+      ctx.fillRect(430, 474, 250, 45);
+      ctx.fillStyle = "#7ce8b8";
+      ctx.font = "800 10px ui-monospace, 'Yu Gothic UI', sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("◀  TRANSPORT LANE / 搬送路", 555, 501);
+      ctx.textAlign = "left";
 
       const active = this.selected;
       if (active && !active.forkDamaged && !active.transported) {
         const check = this.palletForkCheck(active);
-        const guideColor = check.heightOk ? "#72d6b5" : "#ffbd59";
+        const guideColor = check.heightOk ? "#7ce8b8" : "#4aa8ff";
         const pallet = this.palletGeometry(active);
         ctx.strokeStyle = guideColor;
         ctx.lineWidth = 2;
@@ -1037,7 +1185,7 @@
       if (active && active.pickupActive) this.drawPackage(ctx, active);
 
       const handle = this.forkLiftHandleRect();
-      ctx.fillStyle = "#ffbd59";
+      ctx.fillStyle = "#4aa8ff";
       ctx.beginPath();
       ctx.arc(handle.x + handle.width / 2, handle.y + handle.height / 2, 13, 0, Math.PI * 2);
       ctx.fill();
@@ -1199,14 +1347,14 @@
       for (let x = truck.x + 76; x < truck.x + truck.width; x += 76) {
         ctx.beginPath(); ctx.moveTo(x, truck.y + 8); ctx.lineTo(x, truck.y + truck.height - 8); ctx.stroke();
       }
-      ctx.strokeStyle = "#4d7f70";
+      ctx.strokeStyle = "#188b65";
       ctx.lineWidth = 7;
       ctx.strokeRect(truck.x - 1, truck.y - 1, truck.width + 2, truck.height + 2);
-      ctx.strokeStyle = "#ffbd59";
+      ctx.strokeStyle = "#4aa8ff";
       ctx.lineWidth = 4;
       ctx.beginPath(); ctx.moveTo(truck.x, truck.y + truck.height); ctx.lineTo(truck.x + truck.width, truck.y + truck.height); ctx.stroke();
 
-      ctx.fillStyle = "#ffbd59";
+      ctx.fillStyle = "#70bdff";
       ctx.font = "800 11px ui-monospace, monospace";
       ctx.fillText("REAR DOOR / 後部進入", truck.x + 13, truck.y + 25);
       ctx.textAlign = "right";
