@@ -154,4 +154,22 @@ interactionGame.pickupPointerMove(body.x + 30 + (100 - interactionGame.forklift.
 interactionGame.pickupPointerUp(body.x + 30 + (100 - 510), body.y + 50, 3);
 assert(interactionCargo.transported, "Backward drag to outbound bay must complete warehouse transport");
 
-console.log("Smoke tests passed: weight, revenue, protection, securement, overload, pallet opening, fork strike, damage loss, two-screen rendering, and full pickup interaction.");
+const padGame = new Game({ getContext: function () { return canvasContextStub(); } });
+padGame.startStage(1);
+const padCargo = padGame.selected;
+const padPallet = padGame.palletGeometry(padCargo);
+padGame.forklift.forkY = padPallet.holeY + padPallet.holeHeight / 2 - padGame.forkRect().height / 2;
+padGame.forklift.targetForkY = padGame.forklift.forkY;
+padGame.setVirtualControl("drive", 1, true);
+for (let step = 0; step < 9; step += 1) padGame.stepVirtualPad(.1);
+padGame.setVirtualControl("drive", 1, false);
+assert(padGame.mobilePad.drive === 0, "Virtual pad must stop driving when the finger is released");
+assert(padGame.palletForkCheck(padCargo).valid, "Virtual pad forward motion must support valid pallet insertion");
+padGame.activateVirtualPickup();
+assert(padGame.forklift.forkedId === padCargo.id, "Virtual pad center action must lift a correctly engaged pallet");
+padGame.setVirtualControl("drive", -1, true);
+for (let step = 0; step < 20 && !padCargo.transported; step += 1) padGame.stepVirtualPad(.1);
+assert(padCargo.transported, "Virtual pad backward motion must deliver cargo to the left truck");
+assert(padGame.mobilePad.drive === 0 && padGame.mobilePad.lift === 0, "Virtual pad must safely reset after delivery");
+
+console.log("Smoke tests passed: weight, revenue, protection, securement, overload, pallet opening, fork strike, damage loss, two-screen rendering, pointer pickup, and virtual-pad delivery.");

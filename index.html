@@ -3,50 +3,136 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#101826">
-  <meta name="description" content="パレット荷役、重量、重心、破損防止、荷崩れ防止、安全売上を学ぶ実践型フォークリフト・トラック積み込みゲーム">
-  <title>積載研修：積めるもんなら積んでみろ！</title>
+  <meta name="theme-color" content="#062733">
+  <meta name="description" content="翠路ロジスティクス株式会社の架空コーポレートサイト。物流の仕事と、パレット荷役・積付け・固縛を学ぶ安全研修ゲームを体験できます。">
+  <title>翠路ロジスティクス株式会社｜荷物の先の、暮らしまで運ぶ。</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <section id="homeScreen" class="home-screen is-open" aria-label="ゲームホームページ">
     <header class="home-nav">
-      <a class="home-brand" href="#homeTop" aria-label="ホーム上部へ">
-        <span aria-hidden="true">積</span>
-        <strong>積載研修</strong>
-        <small>LOADING ACADEMY</small>
+      <a class="home-brand" href="#homeTop" aria-label="翠路ロジスティクス ホーム上部へ">
+        <span aria-hidden="true">翠</span>
+        <strong>翠路ロジスティクス</strong>
+        <small>SUIRO LOGISTICS</small>
       </a>
       <nav aria-label="ホームページ内メニュー">
-        <a href="#homeLearn">学べること</a>
-        <a href="#homeFlow">遊び方</a>
-        <button id="homeMissionButton" type="button">ミッション選択</button>
+        <a href="#homeBusiness">事業紹介</a>
+        <a href="#homePhilosophy">企業理念</a>
+        <a href="#homePeople">人を知る</a>
+        <a href="#homeRecruit">採用情報</a>
+        <button id="homeMissionButton" type="button">安全研修ゲーム</button>
       </nav>
+      <aside class="community-revenue" aria-label="全プレイヤーの累計安全売上">
+        <small>みんなの累計安全売上</small>
+        <strong id="communityRevenueTotal">集計中…</strong>
+        <span id="communityRevenueStatus">同じサーバーの全プレイヤー</span>
+      </aside>
     </header>
 
+    <div class="home-marquee" aria-label="積載研修メッセージ">
+      <div class="home-marquee-track">
+        <span>SUIRO LOGISTICS / SAFETY FIRST</span><i>●</i>
+        <span>爪先まで、判断力。</span><i>●</i>
+        <span>安全に届いた運賃だけが、本当の売上。</span><i>●</i>
+        <span>荷物の先の、暮らしまで運ぶ。</span><i>●</i>
+        <span>SUIRO LOGISTICS / SAFETY FIRST</span><i>●</i>
+        <span>爪先まで、判断力。</span><i>●</i>
+        <span>安全に届いた運賃だけが、本当の売上。</span><i>●</i>
+        <span>荷物の先の、暮らしまで運ぶ。</span><i>●</i>
+      </div>
+    </div>
+
     <div id="homeTop" class="home-content">
-      <section class="home-hero">
+      <section id="homeHero" class="home-hero" aria-roledescription="carousel" aria-label="積載研修ゲーム紹介">
+        <div class="home-hero-media" aria-live="off">
+          <figure class="home-hero-slide is-active" data-hero-slide aria-hidden="false">
+            <img src="assets/images/home-hero-pickup.png" alt="ヘルメットを着用した運転者がフォークリフトの爪をパレットへ合わせる場面">
+          </figure>
+          <figure class="home-hero-slide" data-hero-slide aria-hidden="true">
+            <img src="assets/images/home-hero-loading.png" alt="緑のトラックへ安全にパレットを積み込む場面">
+          </figure>
+          <figure class="home-hero-slide" data-hero-slide aria-hidden="true">
+            <img src="assets/images/home-hero-securement.png" alt="コンパネ、発泡材、ベルトで固定した荷物を点検する場面">
+          </figure>
+        </div>
+        <div class="home-hero-shade" aria-hidden="true"></div>
         <div class="home-hero-copy">
-          <p class="home-kicker">FORKLIFT &amp; TRUCK LOADING SIMULATOR</p>
-          <h1>積み方ひとつで、<br><em>安全も利益も変わる。</em></h1>
-          <p class="home-lead">パレットを正しくすくい、重量と重心を読み、壊れ物を守って固定する。現場で必要な積み込みの基本を、失敗から学べる実践型ブラウザゲーム。</p>
+          <div class="home-game-logo" aria-label="翠路ロジスティクス 安全アカデミー">
+            <b>翠</b><span><strong>翠路安全アカデミー</strong><small>SUIRO SAFETY ACADEMY / BROWSER GAME</small></span>
+          </div>
+          <p class="home-kicker">SUIRO LOGISTICS / MOVE WITH CARE</p>
+          <h1>安全を、動かす。<br><em>未来へ、つなぐ。</em></h1>
+          <p class="home-lead">私たちが運ぶのは、荷物だけではありません。その先で待つ人の時間と安心まで。翠路ロジスティクスは、安全・品質・人を軸にした物流を追求する架空の運送会社です。</p>
           <div class="home-actions">
-            <button id="homeStartButton" class="home-primary" type="button">無料で研修を始める <span>→</span></button>
-            <a class="home-secondary" href="#homeFlow">遊び方を見る</a>
+            <button id="homeStartButton" class="home-primary" type="button">安全研修ゲームを始める <span>→</span></button>
+            <a class="home-secondary" href="#homeBusiness">翠路の仕事を見る</a>
+          </div>
+          <div class="home-editions" aria-label="プレイする端末を選ぶ">
+            <a id="webVersionLink" class="edition-link edition-web" href="index.html?view=web" target="_blank" rel="noopener noreferrer">
+              <small>DESKTOP</small><strong>ウェブ版を開く</strong><span>マウスで精密操作 ↗</span>
+            </a>
+            <a id="mobileVersionLink" class="edition-link edition-mobile" href="index.html?view=mobile" target="_blank" rel="noopener noreferrer">
+              <small>SMARTPHONE</small><strong>スマホ版を開く</strong><span>仮想パッドで操作 ↗</span>
+            </a>
           </div>
           <div class="home-facts" aria-label="ゲーム概要">
             <span><b>2</b>つの作業工程</span>
             <span><b>5</b>ミッション</span>
+            <span><b>2:30–5:00</b>制限時間</span>
             <span><b>¥145,000</b>安全売上目標</span>
           </div>
         </div>
-        <div class="home-hero-visual" aria-label="フォークリフトと積載トラックのイメージ">
-          <div class="visual-grid" aria-hidden="true"></div>
-          <span class="visual-tag tag-pickup">01 / PALLET PICKUP</span>
-          <span class="visual-tag tag-loading">02 / LOAD PLANNING</span>
-          <img class="home-truck" src="assets/images/truck-side-cutaway.png" alt="側面から荷室が見えるトラック">
-          <img class="home-cargo" src="assets/images/cargo-pallet-cartons.png" alt="木製パレットに積まれた貨物">
-          <img class="home-forklift" src="assets/images/forklift-side-operator.png" alt="ヘルメットを着用した運転者が乗るフォークリフト">
-          <div class="visual-status"><i></i><span>安全確認</span><strong>READY</strong></div>
+        <div class="home-hero-captions" aria-live="polite">
+          <p class="is-active" data-hero-caption><small>SCENE 01 / PICKUP</small><strong>爪先まで、判断力。</strong></p>
+          <p data-hero-caption><small>SCENE 02 / LOADING</small><strong>積載は、輸送品質だ。</strong></p>
+          <p data-hero-caption><small>SCENE 03 / SECUREMENT</small><strong>守って届けて、売上になる。</strong></p>
+        </div>
+        <div class="home-hero-controls" aria-label="メイン画像を切り替える">
+          <span id="homeHeroIndex">01 / 03</span>
+          <button class="is-active" data-hero-dot="0" type="button" aria-label="荷役画像を表示" aria-pressed="true"></button>
+          <button data-hero-dot="1" type="button" aria-label="積み込み画像を表示" aria-pressed="false"></button>
+          <button data-hero-dot="2" type="button" aria-label="固定点検画像を表示" aria-pressed="false"></button>
+        </div>
+      </section>
+
+      <section class="home-proof" aria-label="翠路安全アカデミーの概要">
+        <div><small>SAFETY POLICY</small><strong>01</strong><span>安全はすべてに優先</span></div>
+        <div><small>TRAINING FLOW</small><strong>2<em>SCREENS</em></strong><span>荷役から積付けまで</span></div>
+        <div><small>PRACTICAL MISSIONS</small><strong>5<em>ROUTES</em></strong><span>段階式の実践研修</span></div>
+        <div><small>COMMUNITY SALES</small><strong id="communityDeliveryCount">—</strong><span>安全配送の累計便数</span></div>
+      </section>
+
+      <section id="homeBusiness" class="home-section company-business">
+        <div class="company-story">
+          <div class="home-section-heading">
+            <p class="home-kicker">OUR BUSINESS / FICTIONAL COMPANY</p>
+            <h3>運ぶ、保つ、<br>まっすぐつなぐ。</h3>
+            <p>一般貨物の輸送、倉庫内荷役、壊れ物や生体ケージを想定した特殊荷役まで。運行と現場が同じ安全基準を共有し、荷物の状態を次の工程へ確実につなぐ——それが翠路の仕事です。</p>
+          </div>
+          <figure class="company-team-photo">
+            <img src="assets/images/company-team.png" alt="緑のトラック前で安全装備を着用して働く架空の物流スタッフたち">
+            <figcaption>ONE TEAM, ONE SAFETY STANDARD <small>AI生成による架空人物</small></figcaption>
+          </figure>
+        </div>
+        <div class="business-grid">
+          <article><small>01 / TRANSPORT</small><h4>幹線・地域輸送</h4><p>積載効率だけに偏らず、重量配分・荷姿・納品順まで考えた輸送計画を組み立てます。</p></article>
+          <article><small>02 / HANDLING</small><h4>倉庫荷役・積付け</h4><p>パレット差込、低い荷姿での搬送、荷台での固定まで、工程をまたいで品質を守ります。</p></article>
+          <article><small>03 / QUALITY</small><h4>特殊貨物サポート</h4><p>ガラス、精密機器、ペットケージなど、破損厳禁貨物を想定した荷扱いを徹底します。</p></article>
+        </div>
+      </section>
+
+      <section id="homePhilosophy" class="home-section company-philosophy">
+        <div class="philosophy-statement">
+          <p class="home-kicker">CORPORATE PHILOSOPHY</p>
+          <h3>荷物の先の、<br><em>暮らしまで運ぶ。</em></h3>
+          <p>安全な一便は、誰かの予定を守り、仕事をつなぎ、暮らしを支えます。私たちは「急ぐときほど基本へ戻る」文化を育て、誠実な判断を積み重ねます。</p>
+        </div>
+        <div class="philosophy-values">
+          <article><b>SAFETY</b><strong>安全は、すべてに優先する。</strong><p>止まる、見る、確かめる。迷ったときに立ち止まれる組織であり続けます。</p></article>
+          <article><b>QUALITY</b><strong>荷姿まで、輸送品質と考える。</strong><p>受け取った状態を守り、次の工程が安全に扱える形で引き渡します。</p></article>
+          <article><b>PEOPLE</b><strong>人を守り、人を育てる。</strong><p>経験を感覚で終わらせず、言葉と研修で次の仲間へつなぎます。</p></article>
+          <article><b>GREEN</b><strong>無駄を減らし、未来へつなぐ。</strong><p>過不足のない資材と積載を選び、効率と安全の両立を目指します。</p></article>
         </div>
       </section>
 
@@ -64,6 +150,42 @@
         </div>
       </section>
 
+      <section id="homeStandard" class="home-section home-standard-section">
+        <div class="home-section-heading">
+          <p class="home-kicker">OUR TRAINING STANDARD</p>
+          <h3>運ぶだけではなく、<br>安全に届け切る。</h3>
+          <p>物流企業のサイトで重視される安全・品質・環境の考え方を、積み込み作業の判断へ置き換えました。</p>
+        </div>
+        <div class="standard-grid">
+          <article><i>SAFETY 01</i><h4>事故を起こさない</h4><p>爪高、差込量、定格荷重を確認。誤操作は破損と損失として結果へ反映します。</p><span>安全荷役</span></article>
+          <article><i>QUALITY 02</i><h4>荷物を守り抜く</h4><p>壊れ物やペットケージに必要な緩衝・固定を選び、荷崩れとずれを防止します。</p><span>輸送品質</span></article>
+          <article><i>GREEN 03</i><h4>無駄なく積み切る</h4><p>空間、重量、配送順を見ながら積載効率を上げ、安全売上の最大化を目指します。</p><span>効率輸送</span></article>
+        </div>
+      </section>
+
+      <section id="homeTime" class="home-section home-time-section">
+        <div class="time-demo" aria-label="制限時間と遅延損失の例">
+          <div class="time-demo-head"><span>MISSION TIMER</span><b>02:30</b></div>
+          <div class="time-track"><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="time-moments">
+            <span><b>START</b>安全確認から開始</span>
+            <span><b>00:00</b>作業は続行可能</span>
+            <span class="is-loss"><b>+00:05</b>−¥500</span>
+          </div>
+          <div class="time-warning"><strong>急ぐほど、基本を守る。</strong><small>爪突き事故や破損は、遅延より大きな損失になります。</small></div>
+        </div>
+        <div class="home-section-heading">
+          <p class="home-kicker">TIME LIMIT / DELIVERY PROMISE</p>
+          <h3>時間切れは終了ではない。<br>遅延の始まりだ。</h3>
+          <p>ミッションごとの制限時間は2分30秒〜5分。0秒になっても積み込みは続けられますが、その後は5秒ごとに500円が安全売上から差し引かれます。</p>
+          <ul class="time-rules">
+            <li><b>1</b><span>制限時間内に「荷役 → 積付け → 固定 → 点検 → 出発」を完了する。</span></li>
+            <li><b>2</b><span>残り30秒はタイマーが警告色に変化。安全手順は省略しない。</span></li>
+            <li><b>3</b><span>速さだけでなく、破損・過積載・荷崩れを防いだ最終利益で評価。</span></li>
+          </ul>
+        </div>
+      </section>
+
       <section id="homeFlow" class="home-section home-flow-section">
         <div class="home-section-heading">
           <p class="home-kicker">HOW TO PLAY</p>
@@ -77,25 +199,99 @@
         </ol>
       </section>
 
+      <div class="home-marquee home-marquee-secondary" aria-hidden="true">
+        <div class="home-marquee-track home-marquee-track-reverse">
+          <span>正しくすくう。</span><i>＋</i><span>低く運ぶ。</span><i>＋</i><span>重心を読む。</span><i>＋</i><span>隙間を埋める。</span><i>＋</i><span>荷を押さえる。</span><i>＋</i><span>安全に届ける。</span><i>＋</i>
+          <span>正しくすくう。</span><i>＋</i><span>低く運ぶ。</span><i>＋</i><span>重心を読む。</span><i>＋</i><span>隙間を埋める。</span><i>＋</i><span>荷を押さえる。</span><i>＋</i><span>安全に届ける。</span><i>＋</i>
+        </div>
+      </div>
+
+      <section id="homePeople" class="home-section company-people">
+        <div class="home-section-heading">
+          <p class="home-kicker">PEOPLE OF SUIRO</p>
+          <h3>現場を知る人が、<br>安全をつくる。</h3>
+          <p>役職に関係なく、危険に気づいた人の声を最優先にする。翠路の架空メンバーが、仕事への姿勢を語ります。</p>
+        </div>
+        <article class="president-message">
+          <figure><img src="assets/images/company-president.png" alt="翠路ロジスティクスの架空の代表取締役 水城蒼太"></figure>
+          <div>
+            <small>MESSAGE FROM THE PRESIDENT</small>
+            <blockquote>「速く届ける」より先に、<br>「無事に届ける」を考える会社へ。</blockquote>
+            <p>物流の品質は、荷台の扉が閉まる前に決まります。一人ひとりが基本を守り、互いに声を掛けられる現場こそ、長く選ばれる物流をつくると信じています。</p>
+            <strong>代表取締役　水城 蒼太</strong>
+            <span>※氏名・人物画像・コメントはすべて架空です</span>
+          </div>
+        </article>
+        <div class="manager-grid">
+          <article>
+            <img src="assets/images/company-manager-east.png" alt="架空の東湾統括部長 青柳直樹">
+            <div><small>EAST OPERATIONS</small><h4>東湾統括部長<br>青柳 直樹</h4><p>「迷ったら一度止める。その判断を、チームで肯定できる現場にします。」</p></div>
+          </article>
+          <article>
+            <img src="assets/images/company-manager-central.png" alt="架空の中京営業所長 森川遥">
+            <div><small>CENTRAL BRANCH</small><h4>中京営業所長<br>森川 遥</h4><p>「配車、荷役、乗務員が同じ情報を持つことが、破損ゼロへの第一歩です。」</p></div>
+          </article>
+          <article>
+            <img src="assets/images/company-manager-west.png" alt="架空の西日本統括部長 結城慎吾">
+            <div><small>WEST OPERATIONS</small><h4>西日本統括部長<br>結城 慎吾</h4><p>「荷物の向こうにいる人を思い浮かべれば、固定の一本にも理由が生まれます。」</p></div>
+          </article>
+        </div>
+        <div class="work-scenes">
+          <article>
+            <img src="assets/images/company-office.png" alt="架空の配車センターで電話対応する事務スタッフ">
+            <div><small>DISPATCH OFFICE</small><h4>情報をつなぐ、配車・事務</h4><p>現場、乗務員、お客様の間に立ち、変更や注意事項を正確に引き継ぎます。</p></div>
+          </article>
+          <article>
+            <img src="assets/images/company-sales.png" alt="架空の物流営業担当者が倉庫で打ち合わせる様子">
+            <div><small>LOGISTICS SALES</small><h4>運び方から考える、物流営業</h4><p>価格だけでなく、荷姿・設備・作業導線まで確認し、安全に実行できる提案をつくります。</p></div>
+          </article>
+        </div>
+        <p class="ai-portrait-note">掲載されている人物はすべて画像生成による架空人物であり、実在する人物とは関係ありません。</p>
+      </section>
+
+      <section id="homeRecruit" class="home-section recruit-section">
+        <div>
+          <p class="home-kicker">RECRUIT / CAREERS</p>
+          <h3>安全を、<br>一緒につくる仕事。</h3>
+          <p>乗務員、荷役スタッフ、配車・事務、物流営業が互いの専門性を尊重し、一本の輸送を支える——という架空の企業文化をご紹介しています。</p>
+        </div>
+        <aside class="recruit-status">
+          <span>採用情報</span>
+          <strong>現在、募集は行っておりません。</strong>
+          <p>募集再開時期は未定です。本デモサイトでは応募・問い合わせを受け付けておりません。</p>
+          <button type="button" disabled>募集職種を見る</button>
+        </aside>
+      </section>
+
+      <section class="fiction-notice" aria-label="架空サイトについての重要なお知らせ">
+        <strong>このWebサイトは、積み込み研修ゲームのために制作された架空の企業サイトです。</strong>
+        <p>「翠路ロジスティクス株式会社」、SUIRO LOGISTICS、掲載する事業所・役職者・従業員・沿革・コメント等はすべて架空であり、実在する企業・団体・人物とは一切関係ありません。住所・電話番号は掲載しておらず、運送依頼、採用応募、問い合わせの受付も行っていません。人物画像はAIで生成した架空人物です。</p>
+      </section>
+
       <section class="home-cta">
-        <div><p class="home-kicker">READY FOR LOADING?</p><h3>安全に積んで、利益を残せ。</h3></div>
-        <button id="homeFooterStart" class="home-primary" type="button">ミッションを選ぶ <span>→</span></button>
+        <div><p class="home-kicker">SUIRO SAFETY ACADEMY</p><h3>安全に積んで、利益を残せ。</h3></div>
+        <div class="home-cta-actions">
+          <a href="index.html?view=web" target="_blank" rel="noopener noreferrer">ウェブ版 ↗</a>
+          <a href="index.html?view=mobile" target="_blank" rel="noopener noreferrer">スマホ版 ↗</a>
+          <button id="homeFooterStart" class="home-primary" type="button">ミッションを選ぶ <span>→</span></button>
+        </div>
       </section>
     </div>
 
     <footer class="home-footer">
-      <span>積載研修 / PRACTICAL LOADING TRAINING</span>
-      <span>NO DOWNLOAD · NO LOGIN · BROWSER GAME</span>
+      <span>翠路ロジスティクス株式会社 / SUIRO LOGISTICS</span>
+      <span>FICTIONAL COMPANY · NO REAL RECRUITING · BROWSER GAME</span>
     </footer>
   </section>
 
-  <main class="app" aria-label="積めるもんなら積んでみろ！">
+  <main class="app" aria-label="積む。守る。届け切れ！">
     <header class="site-header">
-      <button id="gameHomeButton" class="brand-mark" type="button" aria-label="ホームページへ戻る">積</button>
+      <button id="gameHomeButton" class="brand-mark" type="button" aria-label="翠路ロジスティクスのホームページへ戻る">翠</button>
       <div>
-        <p class="eyebrow">PRACTICAL LOADING TRAINING</p>
-        <h1>積めるもんなら<span>積んでみろ！</span></h1>
+        <p class="eyebrow">SUIRO SAFETY ACADEMY</p>
+        <h1>積む。守る。<span>届け切れ！</span></h1>
       </div>
+      <span id="editionBadge" class="edition-badge">WEB EDITION</span>
       <div id="campaignBadge" class="campaign-badge" aria-label="本日の売上目標">
         <small>本日の安全売上</small>
         <strong id="campaignTotal">¥0</strong>
@@ -125,6 +321,24 @@
         </div>
       </div>
 
+      <section id="virtualPad" class="virtual-pad" aria-label="スマートフォン用バーチャルパッド" hidden>
+        <div class="pad-cluster">
+          <span>走行</span>
+          <div>
+            <button id="padDriveBack" class="pad-button" type="button" aria-label="後退、左へ移動"><b>◀</b><small>後退</small></button>
+            <button id="padDriveForward" class="pad-button" type="button" aria-label="前進、右へ移動"><b>▶</b><small>前進</small></button>
+          </div>
+        </div>
+        <button id="padPickupAction" class="pad-action" type="button"><b>持上げ</b><small>差込75%以上で確定</small></button>
+        <div class="pad-cluster pad-lift">
+          <span>爪の高さ</span>
+          <div>
+            <button id="padForkUp" class="pad-button" type="button" aria-label="爪を上げる"><b>▲</b><small>上げる</small></button>
+            <button id="padForkDown" class="pad-button" type="button" aria-label="爪を下げる"><b>▼</b><small>下げる</small></button>
+          </div>
+        </div>
+      </section>
+
       <nav class="controls" aria-label="ゲーム操作">
         <div class="control-group">
           <button id="rotateButton" class="control-button control-accent" type="button"><kbd>R</kbd> 90°回転</button>
@@ -144,12 +358,12 @@
       </nav>
     </section>
 
-    <p class="quick-tip"><span>2画面操作</span> ①倉庫：黄色いハンドルで爪高を合わせ、車体を前進・75%以上差して左へ搬送　②荷台：運んだパレットを積む → 固定 → 点検 → 出発。</p>
+    <p class="quick-tip"><span>2画面操作</span> ①倉庫：青いハンドルで爪高を合わせ、車体を前進・75%以上差して左へ搬送　②荷台：運んだパレットを積む → 固定 → 点検 → 出発。</p>
   </main>
 
   <section id="startScreen" class="screen-overlay" aria-label="ステージ選択">
     <div class="start-card">
-      <p class="eyebrow">LOADING ACADEMY / 5 MISSIONS</p>
+      <p class="eyebrow">SUIRO SAFETY ACADEMY / 5 MISSIONS</p>
       <h2>安全に積んで、<br><em>利益を残せ。</em></h2>
       <p class="start-lead">パレットを正しくすくって運ぶ。重量を守る。重心を整える。壊れ物を守り、固定する。安全に届いた運賃だけが、本当の売上です。</p>
       <div id="campaignSummary" class="campaign-summary"></div>
@@ -176,6 +390,7 @@
   <script src="js/collision.js" defer></script>
   <script src="js/scoring.js" defer></script>
   <script src="js/audio.js" defer></script>
+  <script src="js/community.js" defer></script>
   <script src="js/ui.js" defer></script>
   <script src="js/game.js" defer></script>
   <script src="js/input.js" defer></script>
