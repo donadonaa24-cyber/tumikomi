@@ -530,7 +530,7 @@
       const pkg = this.packages.find((item) => item.id === (this.forklift.forkedId || this.selectedId));
       if (!pkg) return;
       if (this.drag.kind === "lift") {
-        this.forklift.forkY = clamp(this.drag.startForkY + (y - this.drag.startY), 350, 536);
+        this.forklift.forkY = clamp(this.drag.startForkY + (y - this.drag.startY), 240, 536);
         this.forklift.targetForkY = this.forklift.forkY;
       } else if (this.drag.kind === "drive") {
         this.forklift.x = clamp(this.drag.startLiftX + (x - this.drag.startX), 58, 650);
@@ -1015,7 +1015,7 @@
       if (!pkg || pkg.forkDamaged) return;
 
       if (this.mobilePad.lift && !this.forklift.forkedId) {
-        this.forklift.forkY = clamp(this.forklift.forkY + this.mobilePad.lift * 105 * dt, 350, 536);
+        this.forklift.forkY = clamp(this.forklift.forkY + this.mobilePad.lift * 105 * dt, 240, 536);
         this.forklift.targetForkY = this.forklift.forkY;
       }
       if (!this.mobilePad.drive) return;

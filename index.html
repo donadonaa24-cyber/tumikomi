@@ -98,7 +98,7 @@
 
       <section class="home-proof" aria-label="翠路安全アカデミーの概要">
         <div><small>SAFETY POLICY</small><strong>01</strong><span>安全はすべてに優先</span></div>
-        <div><small>TRAINING FLOW</small><strong>2<em>SCREENS</em></strong><span>荷役から積付けまで</span></div>
+          <div><small>TRAINING FLOW</small><strong>3<em>PHASES</em></strong><span>荷役・積載・安全運転</span></div>
         <div><small>PRACTICAL MISSIONS</small><strong>5<em>ROUTES</em></strong><span>段階式の実践研修</span></div>
         <div><small>COMMUNITY SALES</small><strong id="communityDeliveryCount">—</strong><span>安全配送の累計便数</span></div>
       </section>
@@ -192,10 +192,10 @@
           <h3>荷役から配送まで、4ステップ。</h3>
         </div>
         <ol class="home-flow">
-          <li><b>1</b><div><strong>すくう</strong><p>爪をパレット穴へ合わせ、75%以上まで静かに差し込みます。</p></div></li>
+            <li><b>1</b><div><strong>すくう</strong><p>段積みは上から、前後配置は手前から。爪を穴へ75%以上差し込み、奥への突き出しに注意します。</p></div></li>
           <li><b>2</b><div><strong>運ぶ</strong><p>持ち上げた荷を低い位置に保ち、出荷バースまで後退搬送します。</p></div></li>
           <li><b>3</b><div><strong>積む・固定する</strong><p>トラック側面図へ配置し、重量・重心・配送順と固定を整えます。</p></div></li>
-          <li><b>4</b><div><strong>点検して稼ぐ</strong><p>発車前点検を通し、安全に届いた運賃で目標金額を目指します。</p></div></li>
+            <li><b>4</b><div><strong>運転して届ける</strong><p>夜の高速道路を自動加速。ブレーキで減速し、左右で障害物と他車を回避。接触は−5点、パトカー追越時・追越後5秒の90km/h以上は−3点。配送目安120秒、超過は5秒ごとに500円減額。数値はゲーム専用です。</p></div></li>
         </ol>
       </section>
 
@@ -321,6 +321,13 @@
         </div>
       </div>
 
+      <div id="mobileNavDock" class="mobile-nav-dock"></div>
+      <aside class="road-mobile-status" aria-label="配送状況"><strong id="roadTelemetry">自動加速 ／ 制限80km/h</strong><p id="roadAlert">ブレーキで減速、左右で回避。接触−5点。パトカー追越時・追越後5秒は90km/h以上で−3点。</p></aside>
+      <section id="roadControls" class="road-controls" aria-label="高速道路の運転操作" hidden>
+        <button data-road="left" type="button">◀ 左車線</button>
+        <button data-road="right" type="button">右車線 ▶</button>
+        <button data-road="brake" class="road-brake" type="button">ブレーキ ↓</button>
+      </section>
       <section id="virtualPad" class="virtual-pad" aria-label="スマートフォン用バーチャルパッド" hidden>
         <div class="pad-cluster">
           <span>走行</span>
@@ -358,7 +365,7 @@
       </nav>
     </section>
 
-    <p class="quick-tip"><span>2画面操作</span> ①倉庫：青いハンドルで爪高を合わせ、車体を前進・75%以上差して左へ搬送　②荷台：運んだパレットを積む → 固定 → 点検 → 出発。</p>
+    <p class="quick-tip"><span>3段階の研修</span> ①倉庫：上段・手前から取り出し、左へ搬送　②荷台：積む → 固定 → 点検　③配送：自動加速・↓またはスペースでブレーキ・←→で回避。スマホは画面下の操作パッドを使用。</p>
   </main>
 
   <section id="startScreen" class="screen-overlay" aria-label="ステージ選択">
@@ -393,6 +400,7 @@
   <script src="js/community.js" defer></script>
   <script src="js/ui.js" defer></script>
   <script src="js/game.js" defer></script>
+  <script src="js/transport.js" defer></script>
   <script src="js/input.js" defer></script>
   <script src="js/main.js" defer></script>
 </body>

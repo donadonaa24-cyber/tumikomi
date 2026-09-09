@@ -546,6 +546,28 @@ canvas {
 .toast.is-error { border-color: rgba(255,113,91,.52); color: #ffb4a8; }
 
 .virtual-pad { display: none; }
+.mobile-nav-dock:empty { display: none; }
+.road-mobile-status { display: none; }
+.mobile-game.is-driving-phase .road-mobile-status { display: block; padding: 10px 12px; background: #082735; }
+.road-mobile-status strong { color: #7ce8b8; font-size: 15px; }
+.road-mobile-status p { margin: 5px 0 0; font-size: 12px; line-height: 1.5; }
+.mobile-game .mobile-nav-dock .dialogue-panel {
+  position: static; width: 100%; min-width: 0; min-height: 46px; margin: 0;
+  padding: 8px 12px; border-radius: 0; box-shadow: none; transform: none;
+}
+.mobile-game .mobile-nav-dock .dialogue-panel.is-hidden { display: none; }
+.mobile-game .mobile-nav-dock .dialogue-copy p { font-size: 12px; line-height: 1.45; }
+.mobile-game .mobile-nav-dock .dialogue-copy span { font-size: 10px; }
+.road-controls:not([hidden]) { display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 10px; padding: 12px; background: #071d2b; }
+.road-controls button { min-height: 64px; touch-action: none; user-select: none; border: 1px solid #437491; border-radius: 12px; background: #15374c; color: white; font-weight: 800; cursor: pointer; }
+.road-controls .road-brake { background: #84362d; border-color: #e77e63; }
+.road-controls .road-gas { background: #14704d; border-color: #4ad7a1; }
+.road-controls .is-pressed { filter: brightness(1.45); transform: translateY(2px); }
+  .is-driving-phase .controls, .mobile-game.is-driving-phase .controls, .is-driving-phase .phase-indicator, .is-driving-phase .quick-tip { display: none; }
+@media (max-width: 620px) {
+  .road-controls:not([hidden]) { gap: 5px; padding: 7px; }
+  .road-controls button { min-height: 60px; font-size: 12px; padding: 4px; }
+}
 .mobile-game .virtual-pad:not([hidden]) {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);

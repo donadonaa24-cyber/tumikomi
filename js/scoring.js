@@ -195,7 +195,7 @@
     });
     audit.forkDamagePackages.forEach(function (pkg) {
       safety -= 25;
-      penalties.push(pkg.name + "が爪突き事故で破損：−25点・運賃対象外");
+      penalties.push(pkg.name + "が" + (pkg.damageCause || "爪突き事故") + "で破損：−25点・運賃対象外");
     });
     if (stage.rules.delivery && audit.deliveryInversions) {
       const deliveryPenalty = Math.min(15, audit.deliveryInversions * 5);

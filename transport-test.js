@@ -1,0 +1,100 @@
+"use strict";
+require("./smoke-test.js");
+const assert = require("assert");
+const vm = require("vm");
+const fs = require("fs");
+vm.runInThisContext(fs.readFileSync("js/transport.js", "utf8"));
+UI.hideDialogue = function () {};
+const context = new Proxy({}, { get: (_, key) => key === "createLinearGradient" ? () => ({ addColorStop() {} }) : key === "measureText" ? () => ({ width: 100 }) : () => {} });
+function game(stage) { const g = new Game({ getContext: () => context }); g.startStage(stage); return g; }
+// The animation loop runs on the homepage before a mission has been selected.
+const idleGame = new Game({ getContext: () => context });
+assert.doesNotThrow(() => { idleGame.update(.016); idleGame.draw(); });
+assert.strictEqual(idleGame.checkRearStrike(), false);
+assert.deepStrictEqual(idleGame.yardRelations(), { bottom: null, top: null, front: null, rear: null });
+idleGame.startStage(1);
+assert.doesNotThrow(() => { idleGame.update(.016); idleGame.draw(); });
+function insert(g, p, ratio) {
+  const hole = g.palletGeometry(p), box = g.renderRect(p);
+  g.forklift.forkY = hole.holeY + hole.holeHeight / 2 - 4.5;
+  g.forklift.targetForkY = g.forklift.forkY;
+  g.forklift.x = box.x + box.width * ratio - g.forkliftGeometry().mastOffset - g.forklift.forkLength;
+  g.forklift.targetX = g.forklift.x;
+}
+let g = game(2), [bottom, top] = g.packages;
+assert(top.y < bottom.y, "Upper pallet must be visibly above lower pallet");
+insert(g, bottom, .9);
+assert(!g.attemptPickup(bottom));
+assert(bottom.forkDamaged && top.forkDamaged, "Lifting the lower pallet must topple and damage the stack");
+assert(g.yardDebris.length === 2);
+g.draw();
+g = game(2); [bottom, top] = g.packages;
+g.selectPickupCargo(top); insert(g, top, .85);
+assert(g.attemptPickup(top), "Upper pallet must be independently removable");
+g.completeTransport(top); g.selectPickupCargo(bottom); insert(g, bottom, .85);
+assert(g.attemptPickup(bottom), "Lower pallet becomes safe after top is removed");
+g = game(3);
+let front = g.packages[2], rear = g.packages[3];
+g.selectPickupCargo(front); g.selectPickupCargo(rear);
+assert(g.selected === front, "Rear selection is blocked until front is removed");
+insert(g, front, .85);
+assert(!g.checkRearStrike()); assert(g.attemptPickup(front));
+g = game(3); front = g.packages[2]; rear = g.packages[3];
+g.selectPickupCargo(front); insert(g, front, 1.2);
+assert(g.checkRearStrike()); assert(rear.forkDamaged && !front.forkDamaged);
+g = game(1); g.beginDrive();
+for (let n = 0; n < 20; n++) g.update(.05);
+assert(g.road.speed > 0 && g.road.distance > 0);
+const speed = g.road.speed; g.roadControl("brake", true); g.update(.1);
+assert(g.road.speed < speed);
+g.roadControl("right", true); g.update(.1); assert(g.road.x > 548);
+g.road.cars = []; g.road.brake = false; g.road.speed = 85; g.road.distance = 659;
+g.road.lane = 0; g.road.x = 548; g.update(.1);
+assert(g.road.hits === 1, "Visible obstacle contact must deduct points");
+g.update(.1); assert(g.road.hits === 1, "Same obstacle must only count once");
+g.draw();
+g = game(1); g.beginDrive(); g.road.cars = []; g.road.speed = 95; g.road.distance = 659;
+g.road.lane = 1; g.road.x = 732; g.update(.1);
+assert(g.road.hits === 0, "Other lane avoids obstacle even without curve braking");
+g.road.speed = 95; g.road.cars = [{ patrol: true, at: g.road.distance + 150, speed: 50, lane: 0 }]; g.update(.1);
+assert(g.road.fines === 0, "A distant patrol must not monitor speed");
+g.road.cars[0].at = g.road.distance + 30; g.update(.1);
+assert(g.road.fines === 1);
+assert(g.road.speed > 90, "Speed penalty must not force a stop");
+g.update(.1); assert(g.road.fines === 1);
+
+g = game(1); g.beginDrive(); g.road.events = []; g.road.lane = 1; g.road.x = 732;
+g.road.speed = 88; g.road.cars = [{ patrol: true, at: .1, speed: 50, lane: 0 }]; g.update(.05);
+assert(g.road.fines === 0 && g.road.cars[0].monitorUntil > 0);
+g.road.speed = 90; g.update(.05); assert(g.road.fines === 1, "Post-pass monitoring must apply");
+g.road.cars[0].ticketed = false; g.road.seconds = g.road.cars[0].monitorUntil + .1;
+g.update(.05); assert(g.road.fines === 1, "Monitoring must expire after five seconds");
+g = game(1); g.beginDrive(); g.road.speed = 79;
+g.road.cars = [{ patrol: true, at: 150, speed: 50, lane: 0 }]; g.update(.1);
+assert(g.road.fines === 0);
+g.road.cars = [{ at: g.road.distance + 10, speed: 45, lane: 0 }]; g.update(.1);
+assert(g.road.hits === 1);
+g = game(1); g.beginDrive(); g.road.speed = 79; g.road.lane = 1; g.road.x = 732;
+g.road.cars = [{ at: 20, speed: 45, lane: 0 }]; g.update(.1);
+assert(g.road.hits === 0, "Passing in the other lane must avoid collision");
+let delivered;
+UI.showResult = (_, result) => { delivered = result; };
+g.driveResult.passed = true; g.driveResult.netRevenue = 15500; g.driveResult.score = 100;
+g.road.distance = g.road.length - 1; g.road.cars = []; g.road.events = []; g.update(.1);
+assert(g.mode === "result" && delivered.passed, "Safe arrival must reach the existing result flow");
+// Traverse every obstacle with automatic acceleration and braking; traffic is tested above.
+g = game(1); g.beginDrive(); g.road.cars = []; g.roadControl("right", true);
+g.driveResult.passed = true; g.driveResult.netRevenue = 15500; g.driveResult.score = 100;
+for (let n = 0; n < 4000 && g.mode === "driving"; n++) {
+  g.roadControl("left", g.road.distance > 960);
+  g.roadControl("brake", g.road.speed > 85);
+  g.update(.05);
+}
+assert(g.mode === "result" && delivered.passed, "Full route must be finishable by braking and passing safely");
+assert(g.road.seconds < 120 && g.road.hits === 0 && g.road.fines === 0);
+g = game(1); g.beginDrive(); g.driveResult.passed = true; g.driveResult.netRevenue = 15500; g.driveResult.score = 100;
+g.road.hits = 1; g.road.fines = 1; g.road.speed = 80; g.road.distance = g.road.length - 1;
+g.road.cars = []; g.road.events = []; g.update(.1);
+assert(delivered.passed && delivered.score === 92 && delivered.netRevenue === 15500,
+  "Contact and speeding reduce score, not automatic pass status or fare");
+console.log("Transport tests passed: top-first pickup, collapse, rear strikes, braking, passing, patrol, collision, and arrival.");

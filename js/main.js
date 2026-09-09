@@ -7,6 +7,31 @@
     const game = new Game(canvas);
     window.game = game;
     GameInput.init(game, canvas);
+    const navPanel = document.getElementById("dialoguePanel");
+    const navDock = document.getElementById("mobileNavDock");
+    function dockNav() {
+      if (document.body.classList.contains("mobile-game")) navDock.appendChild(navPanel);
+      else document.getElementById("canvasWrap").appendChild(navPanel);
+    }
+    dockNav();
+    window.addEventListener("resize", dockNav);
+    const roadKeys = { ArrowDown: "brake", ArrowLeft: "left", ArrowRight: "right", " ": "brake" };
+    document.querySelectorAll("[data-road]").forEach(function (button) {
+      const key = button.getAttribute("data-road");
+      button.addEventListener("pointerdown", function (event) {
+        event.preventDefault(); button.setPointerCapture(event.pointerId);
+        game.roadControl(key, true); button.classList.add("is-pressed");
+      });
+      function release() { game.roadControl(key, false); button.classList.remove("is-pressed"); }
+      ["pointerup", "pointercancel", "lostpointercapture"].forEach(type => button.addEventListener(type, release));
+    });
+    window.addEventListener("keydown", function (event) {
+      if (game.mode === "driving" && roadKeys[event.key]) { event.preventDefault(); game.roadControl(roadKeys[event.key], true); }
+    });
+    window.addEventListener("keyup", function (event) { if (roadKeys[event.key]) game.roadControl(roadKeys[event.key], false); });
+    function releaseRoad() { if (game.road) game.road.brake = false; }
+    window.addEventListener("blur", releaseRoad);
+    document.addEventListener("visibilitychange", function () { if (document.hidden) releaseRoad(); });
 
     document.getElementById("rotateButton").addEventListener("click", function () { game.rotateSelected(); });
     document.getElementById("undoButton").addEventListener("click", function () { game.undo(); });

@@ -1,4 +1,4 @@
-# 企業ページの画像生成記録
+# ホームページ・ゲームの画像生成記録
 
 方式: built-in image_gen（CLIは使用していません）。2026年9月6日生成。
 全画像を確認し、以下のプロジェクト内パスへコピー済み。画像中の人物は架空です。
@@ -32,3 +32,43 @@ Create a vertical 4:5 photorealistic corporate portrait for the website of a com
 ## company-manager-west.png
 
 Create a vertical 4:5 photorealistic corporate portrait for the website of a completely fictional Japanese logistics company. A fictional Japanese man in his early 40s, West Region General Manager, energetic trustworthy expression and natural smile, navy logistics work jacket with green piping over a collared shirt. Clean distribution center loading bay softly blurred behind, safe organized workplace, green and blue corporate palette, soft natural light, annual-report photography. Distinct original face, no resemblance to public figures. No text, no logo, no watermark.
+
+## 夜間配送ゲーム用素材（2026年9月）
+
+方式: built-in image_gen。CLIは使用していません。以下はすべて上記保存先ルートへ保存済みで、`js/transport.js` から利用しています。
+
+### night-city.png
+
+Wide panoramic Japanese waterfront city at night, beautiful illuminated towers and harbor lights, blue teal and warm gold, polished realistic game background, no words no logos. Side view skyline, horizontal scrolling background with matching dark edges, no foreground vehicles.
+
+### highway-map.png
+
+Top down orthographic vertical two lane Japanese expressway game road tile at night. Exactly two same direction lanes, driving upward, straight parallel road edges, dashed white center divider, left shoulder and right barrier, blue illuminated city landscaping at sides. Road centered fills middle 60 percent. No vehicles, no text, no arrows, no perspective. Seamless top and bottom tile for continuous scrolling. High quality realistic game map.
+
+### truck-top-cutout.png
+
+初期生成（truck-top.png）:
+
+Transparent background isolated top down orthographic view of a generic green Japanese box truck with silver cargo roof, cab at TOP pointing UP, complete vehicle centered with generous transparent margin, realistic polished 2D game sprite, no perspective, no text or logos, no ground shadow.
+
+最終編集は下記の共通切り抜きプロンプトを使用。
+
+### patrol-top-cutout.png
+
+初期生成（patrol-top.png）:
+
+Transparent background isolated top down orthographic view of a generic Japanese black and white highway patrol car with red rooftop lightbar, front at TOP pointing UP, full car centered with transparent margin, realistic polished game sprite, no text logos or real insignia, no perspective, no ground shadow.
+
+最終編集は下記の共通切り抜きプロンプトを使用。
+
+### 共通切り抜きプロンプト
+
+Extract the entire vehicle including mirrors and wheels from this exact image. Remove ALL black gray glowing background, make genuinely transparent alpha background. Preserve the vehicle and its top down orientation, no other changes. Tight crop around full vehicle with small transparent margin. No ground, no shadow, no glow.
+
+### car-civilian.png
+
+編集対象: patrol-top-cutout.png。最終プロンプト:
+
+Edit this transparent PNG vehicle sprite. Preserve the existing alpha transparency exactly. Remove the red roof lightbar and replace police black-and-white livery with uniform metallic silver car paint. Ordinary civilian sedan, not a police car. Keep same overhead view, pointing up, exact silhouette, transparent pixels unchanged. Absolutely no checkerboard pattern, no backdrop.
+
+注意: 普通車の生成出力には不透明な背景が残ったため、ゲーム描画時に車体輪郭のクリッピングを適用しています。透過PNGとしては扱っていません。車両・道路の画像は装飾用で、接触判定はゲーム内座標で管理します。
