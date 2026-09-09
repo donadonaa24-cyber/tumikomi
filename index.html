@@ -195,7 +195,7 @@
             <li><b>1</b><div><strong>すくう</strong><p>段積みは上から、前後配置は手前から。爪を穴へ75%以上差し込み、奥への突き出しに注意します。</p></div></li>
           <li><b>2</b><div><strong>運ぶ</strong><p>持ち上げた荷を低い位置に保ち、出荷バースまで後退搬送します。</p></div></li>
           <li><b>3</b><div><strong>積む・固定する</strong><p>トラック側面図へ配置し、重量・重心・配送順と固定を整えます。</p></div></li>
-            <li><b>4</b><div><strong>運転して届ける</strong><p>夜の高速道路を自動加速。ブレーキで減速し、左右で障害物と他車を回避。接触は−5点、パトカー追越時・追越後5秒の90km/h以上は−3点。配送目安120秒、超過は5秒ごとに500円減額。数値はゲーム専用です。</p></div></li>
+            <li><b>4</b><div><strong>運転して届ける</strong><p>10パターンの夜間配送。通常80km/h、アクセルで最大120km/h、離せば緩やかに減速。左右で工事・障害物を回避。接触・急ブレーキによる荷傷みは−5点。パトカー追越時・追越後5秒は90km/h以上で−3点。配送目安150秒。数値はゲーム専用です。</p></div></li>
         </ol>
       </section>
 
@@ -322,11 +322,12 @@
       </div>
 
       <div id="mobileNavDock" class="mobile-nav-dock"></div>
-      <aside class="road-mobile-status" aria-label="配送状況"><strong id="roadTelemetry">自動加速 ／ 制限80km/h</strong><p id="roadAlert">ブレーキで減速、左右で回避。接触−5点。パトカー追越時・追越後5秒は90km/h以上で−3点。</p></aside>
+      <aside class="road-mobile-status" aria-label="配送状況"><strong id="roadTelemetry">通常80 ／ アクセルで最大120km/h</strong><p id="roadAlert">アクセルを離して緩やかに減速。左右で工事・障害物を回避。高速からの急ブレーキは荷傷みの危険。</p></aside>
       <section id="roadControls" class="road-controls" aria-label="高速道路の運転操作" hidden>
         <button data-road="left" type="button">◀ 左車線</button>
         <button data-road="right" type="button">右車線 ▶</button>
         <button data-road="brake" class="road-brake" type="button">ブレーキ ↓</button>
+        <button data-road="gas" class="road-gas" type="button">アクセル ↑</button>
       </section>
       <section id="virtualPad" class="virtual-pad" aria-label="スマートフォン用バーチャルパッド" hidden>
         <div class="pad-cluster">
@@ -365,7 +366,7 @@
       </nav>
     </section>
 
-    <p class="quick-tip"><span>3段階の研修</span> ①倉庫：上段・手前から取り出し、左へ搬送　②荷台：積む → 固定 → 点検　③配送：自動加速・↓またはスペースでブレーキ・←→で回避。スマホは画面下の操作パッドを使用。</p>
+    <p class="quick-tip"><span>3段階の研修</span> ①倉庫：上段・手前から取り出し、左へ搬送　②荷台：積む → 固定 → 点検　③配送：通常80・↑アクセルで120・離して減速・↓またはスペースでブレーキ・←→で回避。スマホは画面下の操作パッドを使用。</p>
   </main>
 
   <section id="startScreen" class="screen-overlay" aria-label="ステージ選択">

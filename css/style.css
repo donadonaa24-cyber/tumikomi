@@ -558,7 +558,7 @@ canvas {
 .mobile-game .mobile-nav-dock .dialogue-panel.is-hidden { display: none; }
 .mobile-game .mobile-nav-dock .dialogue-copy p { font-size: 12px; line-height: 1.45; }
 .mobile-game .mobile-nav-dock .dialogue-copy span { font-size: 10px; }
-.road-controls:not([hidden]) { display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 10px; padding: 12px; background: #071d2b; }
+.road-controls:not([hidden]) { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; padding: 12px; background: #071d2b; }
 .road-controls button { min-height: 64px; touch-action: none; user-select: none; border: 1px solid #437491; border-radius: 12px; background: #15374c; color: white; font-weight: 800; cursor: pointer; }
 .road-controls .road-brake { background: #84362d; border-color: #e77e63; }
 .road-controls .road-gas { background: #14704d; border-color: #4ad7a1; }

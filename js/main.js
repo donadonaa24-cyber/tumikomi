@@ -15,7 +15,7 @@
     }
     dockNav();
     window.addEventListener("resize", dockNav);
-    const roadKeys = { ArrowDown: "brake", ArrowLeft: "left", ArrowRight: "right", " ": "brake" };
+    const roadKeys = { ArrowUp: "gas", ArrowDown: "brake", ArrowLeft: "left", ArrowRight: "right", " ": "brake" };
     document.querySelectorAll("[data-road]").forEach(function (button) {
       const key = button.getAttribute("data-road");
       button.addEventListener("pointerdown", function (event) {
@@ -29,7 +29,7 @@
       if (game.mode === "driving" && roadKeys[event.key]) { event.preventDefault(); game.roadControl(roadKeys[event.key], true); }
     });
     window.addEventListener("keyup", function (event) { if (roadKeys[event.key]) game.roadControl(roadKeys[event.key], false); });
-    function releaseRoad() { if (game.road) game.road.brake = false; }
+    function releaseRoad() { if (game.road) { game.road.brake = false; game.road.gas = false; } }
     window.addEventListener("blur", releaseRoad);
     document.addEventListener("visibilitychange", function () { if (document.hidden) releaseRoad(); });
 

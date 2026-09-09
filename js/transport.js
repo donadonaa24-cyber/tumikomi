@@ -115,21 +115,41 @@
     else { c.fillStyle = color; c.fillRect(x + w * .15, y, w * .7, h); }
   }
   const oldBegin = P.beginDrive;
+  P.makeRoadPattern = function (index) {
+    const shift = (index % 5) * 24;
+    const events = [
+      { at: 560 + shift, lane: index % 2, name: "落下した資材", length: 0 },
+      { at: 1200 + shift, lane: Math.floor(index / 2) % 2, name: "片側工事ゾーン", length: 100, construction: true },
+      { at: 1880 + shift, lane: (index + 1) % 2, name: "路上の障害物", length: 0 }
+    ];
+    // Traffic belongs to separate road sections, outside each hazard's escape corridor.
+    const cars = [180, 820 + shift, 1520 + shift, 2220 + shift].map((at, n) => ({
+      at, lane: 0, speed: 62 + (index % 3) * 4, cruise: 62 + (index % 3) * 4,
+      patrol: n === index % 4, stopAt: events.find(e => e.at > at)?.at - 340 || Infinity
+    }));
+    return { events, cars };
+  };
   P.beginDrive = function () {
     oldBegin.call(this);
     if (this.mode !== "driving") return;
     this.roadImages = this.roadImages || { city: asset("night-city"), map: asset("highway-map"), truck: asset("truck-top-cutout"), car: asset("car-civilian"), patrol: asset("patrol-top-cutout") };
-    this.road = { speed: 0, distance: 0, length: 1400 + this.stage.id * 120, lane: 0, x: 548,
-      seconds: 0, brake: false, loss: 0, hits: 0, fines: 0, cooldown: 0, warning: "自動加速。ブレーキで減速・左右で障害物を回避。",
-      events: [{ at: 660, lane: 0, name: "急カーブの工事柵" }, { at: 1150, lane: 1, name: "落下した資材" }],
-      cars: [{ at: 180, speed: 42, lane: 0 }, { at: 400, speed: 48, lane: 0 }, { at: 650, speed: 58, lane: 0 },
-        { at: 280 + Math.random() * 140, speed: 50, lane: 0, patrol: true }, { at: 850, speed: 48, lane: 0 }] };
+    const pattern = Math.floor(Math.random() * 10);
+    this.road = Object.assign({ speed: 80, distance: 0, length: 2500, lane: 0, x: 548, pattern,
+      seconds: 0, gas: false, brake: false, brakeDamage: 0, loss: 0, hits: 0, fines: 0, cooldown: 0,
+      warning: "通常80km/h。アクセルで120まで加速。離して減速、急ブレーキに注意。" }, this.makeRoadPattern(pattern));
     this.updateControls();
-    UI.toast("自動で加速します。↓・スペースでブレーキ、←→で回避。接触は−5点、速度違反は−3点。");
+    UI.toast("通常80・アクセルで最大120km/h。離すと緩やかに80へ。工事の220m手前から回避案内。急ブレーキは荷傷みの危険！");
   };
   P.roadControl = function (key, pressed) {
     if (this.mode !== "driving" || !this.road) return;
-    if (key === "brake") this.road.brake = pressed;
+    if (key === "gas") this.road.gas = pressed;
+    if (key === "brake") {
+      if (pressed && !this.road.brake) {
+        this.road.brakeStart = this.road.speed; this.road.brakeChecked = false;
+        this.road.brakeRisk = Math.random();
+      }
+      this.road.brake = pressed;
+    }
     if (pressed && key === "left") this.road.lane = 0;
     if (pressed && key === "right") this.road.lane = 1;
   };
@@ -145,26 +165,40 @@
     const centerY = 535 - (object.at - r.distance) * 1.8;
     const halfWidth = obstacle ? 55 : 27, halfHeight = obstacle ? 20 : 53;
     return r.x + 34 > centerX - halfWidth && r.x - 34 < centerX + halfWidth &&
-      630 > centerY - halfHeight && 490 < centerY + halfHeight;
+      630 > centerY - halfHeight - (object.length || 0) * 1.8 && 490 < centerY + halfHeight;
   };
   P.updateRoad = function (dt) {
     const r = this.road;
     if (!r || document.hidden) return;
     r.seconds += dt; r.cooldown = Math.max(0, r.cooldown - dt);
-    r.speed = clamp(r.speed + (r.brake ? -55 : 12) * dt, 0, 95);
+    r.speed = r.brake ? Math.max(0, r.speed - 45 * dt) : r.gas ? Math.min(120, r.speed + 14 * dt) :
+      r.speed > 80 ? Math.max(80, r.speed - 10 * dt) : Math.min(80, r.speed + 10 * dt);
+    if (r.brake && !r.brakeChecked && r.brakeStart >= 100 && r.brakeStart - r.speed >= 25) {
+      r.brakeChecked = true;
+      if (r.brakeRisk < .35) { r.brakeDamage++; r.warning = "急ブレーキで荷傷み −5点"; r.cooldown = 2; this.flash = .4; UI.toast(r.warning, true); }
+    }
     r.distance += r.speed / 3.6 * dt;
     r.x += ((r.lane ? 732 : 548) - r.x) * Math.min(1, dt * 5);
     const upcoming = r.events.find(e => !e.done && e.at >= r.distance);
     if (!r.cooldown) r.warning = upcoming && upcoming.at - r.distance < 220 ?
       upcoming.name + "まで" + Math.ceil(upcoming.at - r.distance) + "m ／ " + (upcoming.lane ? "左" : "右") + "車線へ回避" :
-      "自動加速 ／ ブレーキで減速・左右で回避。制限80km/h";
+      "通常80 ／ アクセルで120・離して減速 ／ 急ブレーキは荷傷みの危険";
     for (const e of r.events) if (!e.done) {
       if (!e.hit && this.roadContact(e, true)) { e.hit = true; this.roadIncident(e.name + "に接触", 0, false); }
-      if (r.distance > e.at + 90) e.done = true;
+      if (r.distance > e.at + (e.length || 0) + 90) e.done = true;
+    }
+    // Front-to-back following: a full truck plus clearance fits between every two cars.
+    const leaders = {};
+    for (const car of [...r.cars].sort((a, b) => b.at - a.at)) {
+      const leader = leaders[car.lane];
+      const stop = Math.min(car.stopAt ?? Infinity, leader ? leader.at - 220 : Infinity);
+      if (car.cruise != null) car.speed = Math.min(car.cruise, Math.max(0, (stop - car.at) * 1.5));
+      car.nextAt = Math.min(stop, car.at + car.speed / 3.6 * dt);
+      leaders[car.lane] = { at: car.nextAt };
     }
     for (const car of r.cars) {
       const before = car.at - (r.distance - r.speed / 3.6 * dt);
-      car.at += car.speed / 3.6 * dt;
+      car.at = car.nextAt;
       const relative = car.at - r.distance;
       if (car.patrol) {
         if (before >= 0 && relative < 0) car.monitorUntil = r.seconds + 5;
@@ -180,19 +214,20 @@
     }
     const telemetry = document.getElementById("roadTelemetry");
     const alert = document.getElementById("roadAlert");
-    if (telemetry) telemetry.textContent = Math.round(r.speed) + " km/h　残り" + Math.max(0, Math.ceil(r.length - r.distance)) + "m　減点 " + (r.hits * 5 + r.fines * 3) + "点";
+    if (telemetry) telemetry.textContent = Math.round(r.speed) + " km/h　残り" + Math.max(0, Math.ceil(r.length - r.distance)) + "m　減点 " + (r.hits * 5 + r.fines * 3 + r.brakeDamage * 5) + "点";
     if (alert) alert.textContent = r.warning;
     if (r.distance >= r.length) {
       const result = this.driveResult;
-      const delay = Math.max(0, Math.ceil((r.seconds - 120) / 5)) * 500;
+      const delay = Math.max(0, Math.ceil((r.seconds - 150) / 5)) * 500;
       result.netRevenue = Math.max(0, result.netRevenue - r.loss - delay);
       result.damageLoss += r.loss; result.timePenalty += delay;
-      result.score = Math.max(0, result.score - r.hits * 5 - r.fines * 3);
+      result.score = Math.max(0, result.score - r.hits * 5 - r.fines * 3 - r.brakeDamage * 5);
       result.rank = Scoring.rankFor(result.score);
       result.passed = result.passed && result.netRevenue >= this.stage.targetRevenue;
       result.penalties = result.penalties.filter(p => !p.includes("荷物は無事"));
       result.penalties.push("高速配送 " + Math.round(r.seconds) + "秒 ／ 接触・荷傷み " + r.hits + "件 ／ 速度違反 " + r.fines + "件");
-      if (delay) result.penalties.push("配送目安120秒超過：" + Scoring.yen(delay));
+      result.penalties.push("急ブレーキによる荷傷み " + r.brakeDamage + "件 ／ コース " + (r.pattern + 1));
+      if (delay) result.penalties.push("配送目安150秒超過：" + Scoring.yen(delay));
       this.finishDrive();
     }
   };
@@ -232,8 +267,15 @@
     c.beginPath(); c.moveTo(640, 0); c.lineTo(640, 720); c.stroke(); c.setLineDash([]);
     for (const e of r.events) {
       const y = 535 - (e.at - r.distance) * 1.8;
-      if (y < -60 || y > 780) continue;
+      if (y < -60 || y - (e.length || 0) * 1.8 > 780) continue;
       const x = e.lane ? 732 : 548;
+      if (e.construction) {
+        c.fillStyle = "rgba(238,160,40,.35)"; c.fillRect(x - 75, y - e.length * 1.8, 150, e.length * 1.8);
+        for (let cone = 0; cone <= e.length; cone += 20) {
+          c.fillStyle = "#ff8b32"; c.beginPath(); c.moveTo(x - 80, y - cone * 1.8);
+          c.lineTo(x - 67, y - cone * 1.8 - 22); c.lineTo(x - 54, y - cone * 1.8); c.fill();
+        }
+      }
       c.fillStyle = e.hit ? "#74625d" : "#ecab44"; c.fillRect(x - 62, y - 26, 124, 52);
       c.fillStyle = "#302820";
       for (let stripe = 0; stripe < 5; stripe++) c.fillRect(x - 57 + stripe * 25, y - 22, 10, 44);
@@ -250,7 +292,7 @@
     c.fillStyle = "#81e8bd"; c.font = "bold 22px sans-serif"; c.fillText("翠路 NIGHT EXPRESS", 38, 55);
     c.fillStyle = r.speed > 80 ? "#ff7a64" : "#fff"; c.font = "bold 54px monospace"; c.fillText(Math.round(r.speed) + " km/h", 38, 120);
     c.font = "20px sans-serif"; c.fillText("制限80 ／ 残り " + Math.max(0, Math.ceil(r.length - r.distance)) + "m", 38, 160);
-    c.fillText(Math.floor(r.seconds) + "秒 / 120秒　減点 " + (r.hits * 5 + r.fines * 3), 38, 192);
+    c.fillText(Math.floor(r.seconds) + "秒 / 150秒　減点 " + (r.hits * 5 + r.fines * 3 + r.brakeDamage * 5), 38, 192);
     c.fillStyle = "rgba(2,17,30,.94)"; c.fillRect(20, 657, 1240, 48);
     c.fillStyle = "#fff"; c.font = "bold 23px sans-serif"; c.fillText(r.warning, 38, 690);
     c.fillStyle = "#7ce8b8"; c.fillRect(25, 638, 1230 * clamp(r.distance / r.length, 0, 1), 6);

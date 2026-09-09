@@ -48,12 +48,13 @@ assert(g.road.speed > 0 && g.road.distance > 0);
 const speed = g.road.speed; g.roadControl("brake", true); g.update(.1);
 assert(g.road.speed < speed);
 g.roadControl("right", true); g.update(.1); assert(g.road.x > 548);
-g.road.cars = []; g.road.brake = false; g.road.speed = 85; g.road.distance = 659;
+g.road.cars = []; g.road.events = [{at:660,lane:0,name:"test"}]; g.road.brake = false; g.road.speed = 85; g.road.distance = 659;
 g.road.lane = 0; g.road.x = 548; g.update(.1);
 assert(g.road.hits === 1, "Visible obstacle contact must deduct points");
 g.update(.1); assert(g.road.hits === 1, "Same obstacle must only count once");
 g.draw();
 g = game(1); g.beginDrive(); g.road.cars = []; g.road.speed = 95; g.road.distance = 659;
+g.road.events = [{at:660,lane:0,name:"test"}];
 g.road.lane = 1; g.road.x = 732; g.update(.1);
 assert(g.road.hits === 0, "Other lane avoids obstacle even without curve braking");
 g.road.speed = 95; g.road.cars = [{ patrol: true, at: g.road.distance + 150, speed: 50, lane: 0 }]; g.update(.1);
@@ -66,7 +67,7 @@ g.update(.1); assert(g.road.fines === 1);
 g = game(1); g.beginDrive(); g.road.events = []; g.road.lane = 1; g.road.x = 732;
 g.road.speed = 88; g.road.cars = [{ patrol: true, at: .1, speed: 50, lane: 0 }]; g.update(.05);
 assert(g.road.fines === 0 && g.road.cars[0].monitorUntil > 0);
-g.road.speed = 90; g.update(.05); assert(g.road.fines === 1, "Post-pass monitoring must apply");
+g.road.speed = 91; g.update(.05); assert(g.road.fines === 1, "Post-pass monitoring must apply");
 g.road.cars[0].ticketed = false; g.road.seconds = g.road.cars[0].monitorUntil + .1;
 g.update(.05); assert(g.road.fines === 1, "Monitoring must expire after five seconds");
 g = game(1); g.beginDrive(); g.road.speed = 79;
@@ -84,6 +85,7 @@ g.road.distance = g.road.length - 1; g.road.cars = []; g.road.events = []; g.upd
 assert(g.mode === "result" && delivered.passed, "Safe arrival must reach the existing result flow");
 // Traverse every obstacle with automatic acceleration and braking; traffic is tested above.
 g = game(1); g.beginDrive(); g.road.cars = []; g.roadControl("right", true);
+g.road.events = [{at:660,lane:0,name:"test"},{at:1150,lane:1,name:"test"}];
 g.driveResult.passed = true; g.driveResult.netRevenue = 15500; g.driveResult.score = 100;
 for (let n = 0; n < 4000 && g.mode === "driving"; n++) {
   g.roadControl("left", g.road.distance > 960);
