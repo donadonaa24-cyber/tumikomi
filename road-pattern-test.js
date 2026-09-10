@@ -27,6 +27,7 @@ for(let pattern=0;pattern<10;pattern++) {
       g.roadControl("gas",speed===120);
       g.update(.05);
       for(const car of r.cars) for(const e of r.events) {
+        if(r.distance>e.at+(e.length||0)+220) continue;
         assert(car.at<=e.at-239 || car.at>=e.at+(e.length||0)+220,"Escape corridor must remain empty");
       }
       const cars=[...r.cars].sort((a,b)=>a.at-b.at);

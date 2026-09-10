@@ -15,6 +15,24 @@
     }
     dockNav();
     window.addEventListener("resize", dockNav);
+    // Keep the logical canvas at 1280x720; fit its whole 16:9 image, never crop it.
+    const frame = document.querySelector(".game-frame");
+    const wrap = document.getElementById("canvasWrap");
+    function fitGameScreen() {
+      if (!frame || !frame.clientWidth) return;
+      const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      const controlsHeight = Math.max(0, frame.offsetHeight - wrap.offsetHeight);
+      const header = document.querySelector(".site-header");
+      const availableHeight = Math.max(90, viewportHeight - controlsHeight - (header ? header.offsetHeight : 55) - 45);
+      const width = Math.floor(Math.min(1280, frame.clientWidth, availableHeight * 16 / 9));
+      wrap.style.width = width + "px";
+      wrap.style.height = (width * 9 / 16) + "px";
+    }
+    window.addEventListener("resize", fitGameScreen);
+    document.addEventListener("fullscreenchange", fitGameScreen);
+    if (window.visualViewport) window.visualViewport.addEventListener("resize", fitGameScreen);
+    if (typeof ResizeObserver !== "undefined") new ResizeObserver(fitGameScreen).observe(frame);
+    fitGameScreen();
     const roadKeys = { ArrowUp: "gas", ArrowDown: "brake", ArrowLeft: "left", ArrowRight: "right", " ": "brake" };
     document.querySelectorAll("[data-road]").forEach(function (button) {
       const key = button.getAttribute("data-road");
@@ -26,9 +44,12 @@
       ["pointerup", "pointercancel", "lostpointercapture"].forEach(type => button.addEventListener(type, release));
     });
     window.addEventListener("keydown", function (event) {
+      if (event.ctrlKey || event.metaKey || event.altKey || /input|textarea|select/i.test(document.activeElement.tagName) || document.activeElement.isContentEditable) return;
+      if (game.handleControlKey(event.key, true, event.repeat)) { event.preventDefault(); return; }
       if (game.mode === "driving" && roadKeys[event.key]) { event.preventDefault(); game.roadControl(roadKeys[event.key], true); }
     });
-    window.addEventListener("keyup", function (event) { if (roadKeys[event.key]) game.roadControl(roadKeys[event.key], false); });
+    window.addEventListener("keyup", function (event) { game.handleControlKey(event.key, false, false); if (roadKeys[event.key]) game.roadControl(roadKeys[event.key], false); });
+    document.getElementById("roadPauseButton").addEventListener("click", function () { game.toggleRoadPause(); });
     function releaseRoad() { if (game.road) { game.road.brake = false; game.road.gas = false; } }
     window.addEventListener("blur", releaseRoad);
     document.addEventListener("visibilitychange", function () { if (document.hidden) releaseRoad(); });

@@ -324,10 +324,11 @@
       <div id="mobileNavDock" class="mobile-nav-dock"></div>
       <aside class="road-mobile-status" aria-label="配送状況"><strong id="roadTelemetry">通常80 ／ アクセルで最大120km/h</strong><p id="roadAlert">アクセルを離して緩やかに減速。左右で工事・障害物を回避。高速からの急ブレーキは荷傷みの危険。</p></aside>
       <section id="roadControls" class="road-controls" aria-label="高速道路の運転操作" hidden>
-        <button data-road="left" type="button">◀ 左車線</button>
-        <button data-road="right" type="button">右車線 ▶</button>
-        <button data-road="brake" class="road-brake" type="button">ブレーキ ↓</button>
-        <button data-road="gas" class="road-gas" type="button">アクセル ↑</button>
+        <button id="roadPauseButton" class="road-pause" type="button" aria-pressed="false" hidden>Ⅱ 一時停止</button>
+        <button data-road="gas" class="road-gas" type="button" aria-label="上：加速">▲ 加速</button>
+        <button data-road="left" type="button" aria-label="左：左車線へ移動">◀ 左へ</button>
+        <button data-road="right" type="button" aria-label="右：右車線へ移動">右へ ▶</button>
+        <button data-road="brake" class="road-brake" type="button" aria-label="下：減速">▼ 減速</button>
       </section>
       <section id="virtualPad" class="virtual-pad" aria-label="スマートフォン用バーチャルパッド" hidden>
         <div class="pad-cluster">

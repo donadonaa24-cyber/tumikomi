@@ -1,0 +1,25 @@
+"use strict";
+require("./pickup-motion-test.js");
+const assert = require("assert");
+const make = () => {
+  const g = new Game({getContext:()=>({})}); g.startStage(1); g.beginDrive();
+  g.road.events=[]; g.road.cars=[]; g.road.lane=1; g.road.x=732; return g;
+};
+let g=make();
+for(let i=0;i<161;i++)g.update(.05);
+assert.equal(g.road.lanePenalties,1);
+g.roadControl("left",true); g.update(.05); assert.equal(g.road.rightSeconds,0);
+g=make(); g.road.cars=[{at:-80,lane:1,speed:120,cruise:120,overtaker:true}];
+for(let i=0;i<85;i++)g.update(.05);
+assert.equal(g.road.lanePenalties,1); assert.equal(g.road.hits,0);
+g=make(); g.road.cars=[{at:-80,lane:1,speed:120,cruise:120,overtaker:true}];
+g.roadControl("left",true);
+for(let i=0;i<85;i++)g.update(.05);
+assert.equal(g.road.lanePenalties,0); assert.equal(g.road.hits,0);
+g=make(); g.road.events=[{at:100,lane:0,length:1000,name:"工事"}];
+g.road.cars=[{at:-80,lane:1,speed:120,cruise:120,overtaker:true}];
+for(let i=0;i<120;i++)g.update(.05);
+assert.equal(g.road.lanePenalties,0,"No forced yielding into construction");
+g=make(); g.road.lane=0; g.road.x=548; g.update(.1);
+assert(Math.abs(g.road.distance - 80/3.6*.1*1.75)<.00001);
+console.log("Right-lane timeout, rear overtaker, safe yielding, hazard exemption and 1.75x motion passed.");
