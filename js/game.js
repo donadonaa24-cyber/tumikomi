@@ -271,10 +271,12 @@
       const penetration = Math.max(0, Math.min(pallet.rect.width, fork.x + fork.width - pallet.rect.x));
       const ratio = pallet.rect.width ? penetration / pallet.rect.width : 0;
       const heightOk = verticalError <= tolerance;
+      const touchesCargo = fork.y + fork.height > pallet.rect.y && fork.y < pallet.rect.y + pallet.rect.height;
       const weightOk = pkg.weightKg <= this.forklift.capacityKg;
       return {
         valid: heightOk && weightOk && ratio >= .75,
         heightOk,
+        touchesCargo,
         weightOk,
         verticalError,
         tolerance,
@@ -450,7 +452,7 @@
         UI.toast("定格荷重1,500kgを超えています。", true);
         return false;
       }
-      if (!check.heightOk && check.penetration > 0) {
+      if (!check.heightOk && check.touchesCargo && check.penetration > 0) {
         this.triggerForkAccident(pkg);
         return false;
       }
@@ -538,9 +540,10 @@
         if (this.forklift.forkedId) this.syncPickedCargo();
       }
       if (!this.forklift.forkedId) {
-        const check = this.palletForkCheck(pkg);
+        const target = this.resolvePickupTarget ? this.resolvePickupTarget() : pkg;
+        const check = this.palletForkCheck(target);
         this.forklift.engagement = check.ratio;
-        if (check.penetration > 6 && !check.heightOk) this.triggerForkAccident(pkg);
+        if (check.penetration > 6 && !check.heightOk && check.touchesCargo) this.triggerForkAccident(target);
       }
     }
 
@@ -1027,9 +1030,10 @@
         if (this.mobilePad.drive < 0 && this.forklift.x <= 125) this.completeTransport(pkg);
         return;
       }
-      const check = this.palletForkCheck(pkg);
+      const target = this.resolvePickupTarget ? this.resolvePickupTarget() : pkg;
+      const check = this.palletForkCheck(target);
       this.forklift.engagement = check.ratio;
-      if (check.penetration > 6 && !check.heightOk) this.triggerForkAccident(pkg);
+      if (check.penetration > 6 && !check.heightOk && check.touchesCargo) this.triggerForkAccident(target);
     }
 
     draw() {

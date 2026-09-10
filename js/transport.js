@@ -68,7 +68,24 @@
     return false;
   };
   const oldAttempt = P.attemptPickup;
+  // A visible upper pallet is a physical target even while the lower pallet is selected.
+  P.resolvePickupTarget = function () {
+    if (!this.stage || this.phase !== "pickup" || this.forklift.forkedId) return this.selected;
+    const r = this.yardRelations(), fork = this.forkRect();
+    if (this.selected !== r.bottom && this.selected !== r.top) return this.selected;
+    const target = [r.top, r.bottom].find(p => p && alive(p) && (() => {
+      const box = this.renderRect(p);
+      return fork.y + fork.height > box.y && fork.y < box.y + box.height;
+    })());
+    if (target && target !== this.selected) {
+      this.packages.forEach(p => { p.pickupActive = p === target; });
+      this.selectedId = target.id;
+      this.updateControls();
+    }
+    return this.selected;
+  };
   P.attemptPickup = function (pkg) {
+    pkg = this.resolvePickupTarget() || pkg;
     if (this.checkRearStrike()) return false;
     const r = this.yardRelations();
     if (pkg === r.bottom && alive(r.top) && this.palletForkCheck(pkg).valid) {
@@ -138,7 +155,7 @@
       seconds: 0, gas: false, brake: false, brakeDamage: 0, loss: 0, hits: 0, fines: 0, cooldown: 0,
       warning: "通常80km/h。アクセルで120まで加速。離して減速、急ブレーキに注意。" }, this.makeRoadPattern(pattern));
     this.updateControls();
-    UI.toast("通常80・アクセルで最大120km/h。離すと緩やかに80へ。工事の220m手前から回避案内。急ブレーキは荷傷みの危険！");
+    UI.toast("通常80・アクセルで最大120km/h。離すと緩やかに80へ。110m手前から回避案内。120km/hでは判断を素早く！");
   };
   P.roadControl = function (key, pressed) {
     if (this.mode !== "driving" || !this.road) return;
@@ -162,11 +179,13 @@
   // Match visible vehicle bodies, with a small forgiving inset (mirrors are excluded).
   P.roadContact = function (object, obstacle) {
     const r = this.road, centerX = object.lane ? 732 : 548;
-    const centerY = 535 - (object.at - r.distance) * 1.8;
+    const centerY = this.roadObjectY(object.at);
     const halfWidth = obstacle ? 55 : 27, halfHeight = obstacle ? 20 : 53;
     return r.x + 34 > centerX - halfWidth && r.x - 34 < centerX + halfWidth &&
-      630 > centerY - halfHeight - (object.length || 0) * 1.8 && 490 < centerY + halfHeight;
+      630 > centerY - halfHeight - (object.length || 0) * 5 && 490 < centerY + halfHeight;
   };
+  // One distance-based projection for lane markings, road tiles, hazards and collisions.
+  P.roadObjectY = function (at) { return 535 - (at - this.road.distance) * 5; };
   P.updateRoad = function (dt) {
     const r = this.road;
     if (!r || document.hidden) return;
@@ -180,7 +199,7 @@
     r.distance += r.speed / 3.6 * dt;
     r.x += ((r.lane ? 732 : 548) - r.x) * Math.min(1, dt * 5);
     const upcoming = r.events.find(e => !e.done && e.at >= r.distance);
-    if (!r.cooldown) r.warning = upcoming && upcoming.at - r.distance < 220 ?
+    if (!r.cooldown) r.warning = upcoming && upcoming.at - r.distance < 110 ?
       upcoming.name + "まで" + Math.ceil(upcoming.at - r.distance) + "m ／ " + (upcoming.lane ? "左" : "右") + "車線へ回避" :
       "通常80 ／ アクセルで120・離して減速 ／ 急ブレーキは荷傷みの危険";
     for (const e of r.events) if (!e.done) {
@@ -266,14 +285,14 @@
     c.setLineDash([30, 35]); c.lineDashOffset = -scroll;
     c.beginPath(); c.moveTo(640, 0); c.lineTo(640, 720); c.stroke(); c.setLineDash([]);
     for (const e of r.events) {
-      const y = 535 - (e.at - r.distance) * 1.8;
-      if (y < -60 || y - (e.length || 0) * 1.8 > 780) continue;
+      const y = this.roadObjectY(e.at);
+      if (y < -60 || y - (e.length || 0) * 5 > 780) continue;
       const x = e.lane ? 732 : 548;
       if (e.construction) {
-        c.fillStyle = "rgba(238,160,40,.35)"; c.fillRect(x - 75, y - e.length * 1.8, 150, e.length * 1.8);
+        c.fillStyle = "rgba(238,160,40,.35)"; c.fillRect(x - 75, y - e.length * 5, 150, e.length * 5);
         for (let cone = 0; cone <= e.length; cone += 20) {
-          c.fillStyle = "#ff8b32"; c.beginPath(); c.moveTo(x - 80, y - cone * 1.8);
-          c.lineTo(x - 67, y - cone * 1.8 - 22); c.lineTo(x - 54, y - cone * 1.8); c.fill();
+          c.fillStyle = "#ff8b32"; c.beginPath(); c.moveTo(x - 80, y - cone * 5);
+          c.lineTo(x - 67, y - cone * 5 - 22); c.lineTo(x - 54, y - cone * 5); c.fill();
         }
       }
       c.fillStyle = e.hit ? "#74625d" : "#ecab44"; c.fillRect(x - 62, y - 26, 124, 52);
@@ -282,7 +301,7 @@
       c.fillStyle = "#fff"; c.font = "bold 17px sans-serif"; c.fillText(e.name, x - 75, y - 35);
     }
     for (const car of r.cars) {
-      const y = 535 - (car.at - r.distance) * 1.8;
+      const y = this.roadObjectY(car.at);
       if (y < -160 || y > 780) continue;
       sprite(c, car.patrol ? i.patrol : i.car, (car.lane ? 732 : 548) - 43, y - 65, 86, 130, "#b5c4d0");
       if (car.patrol) { c.fillStyle = Math.floor(r.seconds * 5) % 2 ? "#ff3846" : "#ffbabd"; c.fillRect((car.lane ? 732 : 548) - 15, y - 6, 30, 6); }

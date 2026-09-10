@@ -22,7 +22,7 @@ for(let pattern=0;pattern<10;pattern++) {
     g.driveResult.passed=true; g.driveResult.netRevenue=15500; g.driveResult.score=100;
     for(let n=0;n<3500 && g.mode==="driving";n++) {
       const r=g.road;
-      const hazard=r.events.find(e=>r.distance>=e.at-210 && r.distance<=e.at+(e.length||0)+110);
+      const hazard=r.events.find(e=>r.distance>=e.at-110 && r.distance<=e.at+(e.length||0)+110);
       g.roadControl(hazard ? (hazard.lane ? "left":"right") : "right",true);
       g.roadControl("gas",speed===120);
       g.update(.05);
