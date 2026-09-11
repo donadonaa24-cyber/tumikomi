@@ -5,9 +5,9 @@
   const alive = p => !p.transported && !p.forkDamaged;
   const oldStart = P.startStage;
   P.startStage = function (id) {
-    this.yardDebris = []; this.road = null; this.autoPalletReady = null; this.autoPalletRelease = false;
+    this.yardDebris = []; this.road = null;
     oldStart.call(this, id);
-    if (id >= 2) UI.dialogue("上ボタンで爪を上げると、上段の穴へ自動差込。いったん離して、もう一度上を押すと持ち上がります。", "boss");
+    if (id >= 2) UI.dialogue("爪を上段の穴の高さへ合わせ、手動で前進して75%以上差し込みます。その後、上ボタン／Wで持上げ。", "boss");
   };
   const oldLayout = P.layoutPickupBay;
   P.yardRelations = function () {
@@ -40,7 +40,6 @@
     if (pkg === r.rear && r.front && alive(r.front)) {
       UI.toast("奥のパレットは手前を取り出してから扱います。", true); return;
     }
-    if (pkg && !pkg.transported && !pkg.forkDamaged && !this.forklift.forkedId) { this.autoPalletReady = null; this.autoPalletRelease = false; }
     oldSelect.call(this, pkg);
     if (pkg === r.bottom && alive(r.top)) UI.dialogue("段積み貨物です。上段をタップして先に取り出してください。下段を持ち上げると転倒します。", "boss");
     if (pkg === r.front && alive(r.rear)) UI.dialogue("奥にも貨物があります。差込75%以上で止め、爪先を奥へ突き出さないように。", "boss");
@@ -69,32 +68,24 @@
     return false;
   };
   const oldAttempt = P.attemptPickup;
-  P.assistUpperPallet = function (raising) {
-    if (!raising || this.mode !== "playing" || this.phase !== "pickup" || this.forklift.forkedId || this.autoPalletReady) return false;
+  const precisePalletCheck = P.palletForkCheck;
+  P.palletForkCheck = function (pkg) {
+    const check = precisePalletCheck.call(this, pkg);
     const r = this.yardRelations();
-    if (!r.top || !r.bottom || !alive(r.top) || !alive(r.bottom) || (this.selected !== r.bottom && this.selected !== r.top)) return false;
-    const hole = this.palletGeometry(r.top);
-    const targetY = hole.holeY + hole.holeHeight / 2 - this.forkRect().height / 2;
-    if (Math.abs(this.forklift.forkY - targetY) > 18) return false;
-    this.packages.forEach(p => { p.pickupActive = p === r.top; });
-    this.selectedId = r.top.id;
-    this.forklift.forkY = this.forklift.targetForkY = targetY;
-    this.forklift.x = this.forklift.targetX = hole.rect.x + hole.rect.width * .85 - this.forkliftGeometry().mastOffset - this.forklift.forkLength;
-    this.forklift.engagement = .85;
-    this.autoPalletReady = r.top.id; this.autoPalletRelease = false;
-    this.mobilePad.lift = 0;
-    UI.dialogue("上段の穴へ自動差込OK。上ボタン／Wを離して、もう一度押すと持上げ。", "rookie");
-    this.updateControls(); return true;
+    if (this.phase === "pickup" && pkg === r.top && r.bottom && alive(r.bottom) && alive(pkg)) {
+      check.tolerance = 18;
+      check.heightOk = check.verticalError <= check.tolerance;
+      check.valid = check.heightOk && check.weightOk && check.ratio >= .75;
+    }
+    return check;
   };
   const oldVirtualControl = P.setVirtualControl;
   P.setVirtualControl = function (axis, value, pressed) {
     if (axis === "lift" && value === -1 && this.mode === "playing" && this.phase === "pickup") {
-      if (!pressed) this.autoPalletRelease = true;
       if (pressed && !this.forklift.forkedId) {
-        if (this.autoPalletReady && !this.autoPalletRelease) return;
         const pkg = this.resolvePickupTarget();
         if (pkg && this.palletForkCheck(pkg).valid) {
-          this.autoPalletReady = null; this.attemptPickup(pkg); return;
+          this.attemptPickup(pkg); return;
         }
       }
     }
@@ -105,7 +96,8 @@
     if (!this.stage || this.phase !== "pickup" || this.forklift.forkedId) return this.selected;
     const r = this.yardRelations(), fork = this.forkRect();
     if (this.selected !== r.bottom && this.selected !== r.top) return this.selected;
-    const target = [r.top, r.bottom].find(p => p && alive(p) && (() => {
+    const nearUpperHole = r.top && alive(r.top) && this.palletForkCheck(r.top).heightOk;
+    const target = nearUpperHole ? r.top : [r.top, r.bottom].find(p => p && alive(p) && (() => {
       const box = this.renderRect(p);
       return fork.y + fork.height > box.y && fork.y < box.y + box.height;
     })());
@@ -123,9 +115,7 @@
     if (pkg === r.bottom && alive(r.top) && this.palletForkCheck(pkg).valid) {
       this.damageYard([r.bottom, r.top], "下段から持ち上げて段積み貨物が転倒"); return false;
     }
-    const picked = oldAttempt.call(this, pkg);
-    if (picked) this.autoPalletReady = null;
-    return picked;
+    return oldAttempt.call(this, pkg);
   };
   for (const method of ["pickupPointerMove", "stepVirtualPad"]) {
     const old = P[method];
@@ -138,11 +128,9 @@
         this.forklift.forkY = clamp(this.forklift.forkY + this.mobilePad.lift * 105 * dt, 200, 536);
         this.forklift.targetForkY = this.forklift.forkY;
         this.syncPickedCargo();
-      } else if (this.assistUpperPallet(this.mobilePad.lift < 0)) return;
-      if (this.autoPalletReady && !this.autoPalletRelease) this.mobilePad.lift = 0;
+      }
     }
     assistedStep.call(this, dt);
-    this.assistUpperPallet(this.mobilePad.lift < 0);
   };
   const oldDraw = P.draw;
   P.draw = function () {

@@ -534,7 +534,6 @@
       if (this.drag.kind === "lift") {
         this.forklift.forkY = clamp(this.drag.startForkY + (y - this.drag.startY), 240, 536);
         this.forklift.targetForkY = this.forklift.forkY;
-        if (this.assistUpperPallet && this.assistUpperPallet(y < this.drag.startY)) { this.drag = null; this.autoPalletRelease = true; return; }
       } else if (this.drag.kind === "drive") {
         this.forklift.x = clamp(this.drag.startLiftX + (x - this.drag.startX), 58, 650);
         this.forklift.targetX = this.forklift.x;
