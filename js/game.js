@@ -67,8 +67,12 @@
     }
 
     startStage(stageId) {
-      const source = StageData.stages.find(function (item) { return item.id === stageId; });
+      // Numeric ids start a fixed mission; a stage object (dispatch run) is started as given.
+      const source = stageId && typeof stageId === "object"
+        ? stageId
+        : StageData.stages.find(function (item) { return item.id === stageId; });
       if (!source) return;
+      this.stageSource = source;
       this.stageNonce += 1;
       this.stage = clone(source);
       this.packages = this.stage.packages.map(function (pkg) {
@@ -102,8 +106,13 @@
       this.releaseForklift();
       this.selectPickupCargo(this.packages[0]);
       UI.dialogue("まず倉庫で荷役。青い昇降ハンドルで爪を穴へ合わせ、車体を前進させます。", "rookie");
-      UI.toast("MISSION 0" + this.stage.id + "　" + this.stage.objective);
+      UI.toast(this.missionLabel() + "　" + this.stage.objective);
       this.updateControls();
+    }
+
+    missionLabel() {
+      if (!this.stage) return "";
+      return this.stage.dispatch ? "DISPATCH / 配車便" : "MISSION 0" + this.stage.id;
     }
 
     get selected() {
@@ -165,7 +174,7 @@
     restart() {
       if (!this.stage) return;
       Sfx.play("button");
-      this.startStage(this.stage.id);
+      this.startStage(this.stageSource || this.stage.id);
     }
 
     layoutTray() {
@@ -884,8 +893,10 @@
       this.mode = "result";
       Sfx.play("clear");
       const id = this.stage.id;
+      const source = this.stageSource;
       UI.showResult(this.stage, this.driveResult, {
-        retry: () => this.startStage(id),
+        // A dispatch retry reopens the same order board so the player can rethink what to accept.
+        retry: () => (source && source.dispatch ? UI.showDispatchBoard(source.board, source.acceptedIds) : this.startStage(id)),
         next: () => this.startStage(Math.min(StageData.stages.length, id + 1)),
         stages: () => { this.mode = "menu"; UI.showStart(); }
       });
@@ -1268,7 +1279,7 @@
 
       ctx.fillStyle = "#ff6b4a";
       ctx.font = "800 13px ui-monospace, monospace";
-      ctx.fillText("MISSION 0" + this.stage.id, 258, 34);
+      ctx.fillText(this.missionLabel(), 258, 34);
       ctx.fillStyle = "#f3ead8";
       ctx.font = "700 27px Georgia, 'Yu Mincho', serif";
       ctx.fillText(this.stage.title, 258, 70, 360);
@@ -1309,7 +1320,7 @@
       ctx.fillText(pickup ? "搬送済み運賃" : "予定安全売上", 1067, 35);
       ctx.fillStyle = "#72d6b5";
       ctx.font = "800 19px ui-monospace, monospace";
-      ctx.fillText(Scoring.yen(Math.max(0, pickup ? stagedRevenue - damagedLoss : audit.grossRevenue - audit.materialCost - damagedLoss)), 1067, 64);
+      ctx.fillText(Scoring.yen(Math.max(0, pickup ? stagedRevenue - damagedLoss : audit.grossRevenue - audit.materialCost - damagedLoss - audit.leftoverPenalty)), 1067, 64);
       ctx.fillStyle = "#7f8c9c";
       ctx.font = "700 9px ui-monospace, monospace";
       ctx.fillText("目標 " + Scoring.yen(this.stage.targetRevenue), 1067, 84);

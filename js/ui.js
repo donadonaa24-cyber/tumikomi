@@ -9,7 +9,41 @@
   let heroTimer = null;
 
   function fallbackProgress() {
-    return { unlocked: 1, completed: [], bestScores: {}, bestRanks: {}, bestEarnings: {}, sound: true };
+    return {
+      unlocked: 1, completed: [], bestScores: {}, bestRanks: {}, bestEarnings: {}, sound: true,
+      dispatch: { plays: 0, clears: 0, bestEarnings: null, bestScore: null, bestRank: null }
+    };
+  }
+
+  function dispatchRecord() {
+    if (!progress.dispatch) progress.dispatch = fallbackProgress().dispatch;
+    return progress.dispatch;
+  }
+
+  // Career level is derived from saved clears, so existing saves get their titles without migration.
+  function careerLevel() {
+    let level = 0;
+    StageData.CAREER.forEach(function (step, index) {
+      if (level !== index - 1) return;
+      if (step.mission && progress.completed.indexOf(step.mission) >= 0) level = index;
+      if (step.dispatch && dispatchRecord().clears > 0) level = index;
+    });
+    return level;
+  }
+
+  function dispatchUnlocked() {
+    const index = StageData.CAREER.findIndex(function (step) { return step.key === "dispatcher"; });
+    return careerLevel() >= index;
+  }
+
+  function missionLabel(stage) {
+    return stage.dispatch ? "DISPATCH / 配車便" : "MISSION 0" + stage.id;
+  }
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, function (ch) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[ch];
+    });
   }
 
   function loadProgress() {
@@ -51,7 +85,8 @@
     ["homeScreen", "homeStartButton", "homeMissionButton", "homeFooterStart", "homeBackButton", "gameHomeButton",
       "startScreen", "stageGrid", "modal", "modalKicker", "modalTitle", "modalBody", "modalActions", "modalClose",
       "dialoguePanel", "speakerAvatar", "speakerName", "dialogueText", "toast", "soundButton", "resetProgressButton",
-      "campaignBadge", "campaignTotal", "campaignTarget", "campaignSummary", "editionBadge"]
+      "campaignBadge", "campaignTotal", "campaignTarget", "campaignSummary", "editionBadge",
+      "careerBadge", "careerPanel", "dispatchPanel"]
       .forEach(function (id) { els[id] = document.getElementById(id); });
 
     Sfx.setEnabled(progress.sound !== false);
@@ -198,13 +233,65 @@
     els.soundButton.setAttribute("aria-pressed", String(Sfx.isEnabled()));
   }
 
+  function renderCareer() {
+    const level = careerLevel();
+    const steps = StageData.CAREER;
+    const current = steps[level];
+    const next = steps[level + 1];
+    if (els.careerBadge) els.careerBadge.textContent = "役職 " + current.title;
+    if (els.careerPanel) {
+      els.careerPanel.innerHTML =
+        "<div class=\"career-now\"><small>現在の役職</small><strong>" + current.title + "</strong>" +
+        "<span>" + (next ? "次の昇進：" + next.title + "（" + next.requirement + "）" : "最高位の役職に到達しています") + "</span></div>" +
+        "<ol class=\"career-ladder\" aria-label=\"昇進ルート\">" + steps.map(function (step, index) {
+          const state = index < level ? "is-done" : index === level ? "is-current" : "";
+          return "<li class=\"" + state + "\">" + step.title + "</li>";
+        }).join("") + "</ol>";
+    }
+    renderDispatchPanel();
+  }
+
+  function renderDispatchPanel() {
+    if (!els.dispatchPanel) return;
+    const unlocked = dispatchUnlocked();
+    const record = dispatchRecord();
+    els.dispatchPanel.innerHTML = "";
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "dispatch-card";
+    card.disabled = !unlocked;
+    card.innerHTML =
+      "<span class=\"stage-number\">DISPATCH / 配車便</span>" +
+      (record.bestScore != null ? "<span class=\"stage-best\">" + record.bestRank + " / " + record.bestScore + "</span>" : "") +
+      "<strong>依頼を選んで、届け切れ。</strong>" +
+      "<small>" + (unlocked
+        ? "12件の依頼から受ける荷を選びます。受けた荷の積み残しは運賃の50%が違約金。毎回ちがう依頼が届きます。"
+        : "「配車係」に昇進すると解放（MISSION 05 クリア）") + "</small>" +
+      "<span class=\"stage-status\">" + (record.bestEarnings != null
+        ? "BEST " + Scoring.yen(record.bestEarnings) + "　クリア " + record.clears + "回"
+        : (unlocked ? "未クリア" : "LOCKED")) + "</span>";
+    if (unlocked) {
+      card.addEventListener("click", function () {
+        Sfx.play("button");
+        showDispatchBoard(StageData.createDispatchBoard(newDispatchSeed()));
+      });
+    }
+    els.dispatchPanel.appendChild(card);
+  }
+
+  function newDispatchSeed() {
+    return ((Date.now() % 2147483647) ^ Math.floor(Math.random() * 2147483647)) >>> 0;
+  }
+
   function renderStageGrid() {
     if (!els.stageGrid) return;
     updateCampaign();
+    renderCareer();
     els.stageGrid.innerHTML = "";
     StageData.stages.forEach(function (stage) {
       const unlocked = stage.id <= progress.unlocked;
       const best = progress.bestEarnings[stage.id];
+      const promotion = StageData.CAREER.find(function (step) { return step.mission === stage.id; });
       const card = document.createElement("button");
       card.type = "button";
       card.className = "stage-card";
@@ -215,6 +302,7 @@
         "<strong>" + stage.title + "</strong>" +
         "<small>" + (unlocked ? stage.objective : "前の研修をクリアすると解放") + "</small>" +
         "<span class=\"stage-target\">目標運賃 " + Scoring.yen(stage.targetRevenue) + "</span>" +
+        (promotion ? "<span class=\"stage-promo\">クリアで「" + promotion.title + "」へ昇進</span>" : "") +
         "<span class=\"stage-status\">" + (best != null ? "BEST " + Scoring.yen(best) : (unlocked ? "未挑戦" : "LOCKED")) + "</span>";
       if (unlocked) {
         card.addEventListener("click", function () {
@@ -267,6 +355,8 @@
   }
 
   function openModal(options) {
+    const card = document.querySelector ? document.querySelector(".modal-card") : null;
+    if (card && card.classList) card.classList.toggle("is-wide", Boolean(options.wide));
     els.modalKicker.textContent = options.kicker || "INFORMATION";
     els.modalTitle.textContent = options.title || "";
     els.modalBody.innerHTML = options.body || "";
@@ -308,9 +398,10 @@
     if (stage.rules.protected) rules.push(["厳", "破損厳禁は上積み禁止。発泡材で隙間を埋める。"]);
     if (stage.rules.securement) rules.push(["固", "全品をコンパネ・発泡材・ベルトのいずれかで固定する。"]);
     if (stage.rules.delivery) rules.push(["順", "配送番号が小さいほど左側の後部ドアへ近づける。"]);
+    if (stage.leftoverPenaltyRate) rules.push(["違", "受注した荷物を積み残すと、運賃の" + Math.round(stage.leftoverPenaltyRate * 100) + "%を違約金として差し引く。"]);
     rules.push(["点", "積み込み後は必ず発車前点検。積み直したら再点検する。"]);
     openModal({
-      kicker: "LOADING MANUAL / MISSION 0" + stage.id,
+      kicker: "LOADING MANUAL / " + missionLabel(stage),
       title: stage.title,
       body:
         "<p>" + stage.description + "</p>" +
@@ -338,7 +429,9 @@
     checks.push("<li class=\"" + (report.crushed.length ? "danger" : "ok") + "\">" + (report.crushed.length ? "✕" : "✓") + " 上積み耐荷重</li>");
     if (stage.rules.protected) checks.push("<li class=\"" + (report.protectionIssues.length ? "danger" : "ok") + "\">" + (report.protectionIssues.length ? "✕" : "✓") + " 破損厳禁貨物</li>");
     if (stage.rules.securement) checks.push("<li class=\"" + (report.unsecured.length ? "danger" : "ok") + "\">" + (report.unsecured.length ? "✕" : "✓") + " 荷物の固定</li>");
-    if (report.grossRevenue - report.materialCost < stage.targetRevenue) checks.push("<li class=\"warn\">△ 予定運賃が目標まで " + Scoring.yen(stage.targetRevenue - (report.grossRevenue - report.materialCost)) + " 不足</li>");
+    const leftoverPenalty = report.leftoverPenalty || 0;
+    const plannedRevenue = report.grossRevenue - report.materialCost - leftoverPenalty;
+    if (plannedRevenue < stage.targetRevenue) checks.push("<li class=\"warn\">△ 予定運賃が目標まで " + Scoring.yen(stage.targetRevenue - plannedRevenue) + " 不足</li>");
     report.warnings.forEach(function (warning) { checks.push("<li class=\"warn\">△ " + warning + "</li>"); });
     report.blockingIssues.forEach(function (issue) { checks.push("<li class=\"danger\">是正：" + issue + "</li>"); });
     const safe = report.blockingIssues.length === 0;
@@ -347,30 +440,67 @@
       title: safe ? (report.forkDamagePackages.length ? "積付けOK・事故損失あり" : "発車準備OK") : "積み直しが必要です",
       body:
         "<ul class=\"inspection-list\">" + checks.join("") + "</ul>" +
-        "<div class=\"revenue-panel\">予定運賃 <strong>" + Scoring.yen(report.grossRevenue - report.materialCost) + "</strong><br>" +
-        "<small>総運賃 " + Scoring.yen(report.grossRevenue) + " − 資材費 " + Scoring.yen(report.materialCost) + " / 目標 " + Scoring.yen(stage.targetRevenue) + "</small></div>" +
+        "<div class=\"revenue-panel\">予定運賃 <strong>" + Scoring.yen(plannedRevenue) + "</strong><br>" +
+        "<small>総運賃 " + Scoring.yen(report.grossRevenue) + " − 資材費 " + Scoring.yen(report.materialCost) +
+        (leftoverPenalty ? " − 積み残し違約金 " + Scoring.yen(leftoverPenalty) : "") +
+        " / 目標 " + Scoring.yen(stage.targetRevenue) + "</small></div>" +
         "<p>" + (safe ? (report.forkDamagePackages.length ? "積付け自体は出発可能ですが、破損品の代替費用と減点は配送結果へ残ります。" : "点検済みです。積み方を変えなければ出発できます。") : "赤い項目を直し、もう一度点検してください。") + "</p>",
       actions: [{ label: safe ? "点検完了" : "積み込みへ戻る", primary: safe }]
     });
   }
 
-  function recordResult(stageId, result) {
-    if (progress.bestScores[stageId] == null || result.score > progress.bestScores[stageId]) {
-      progress.bestScores[stageId] = result.score;
-      progress.bestRanks[stageId] = result.rank.key;
+  function recordDispatchResult(result) {
+    const record = dispatchRecord();
+    record.plays += 1;
+    if (!result.passed) return;
+    record.clears += 1;
+    record.bestEarnings = Math.max(record.bestEarnings || 0, result.netRevenue);
+    if (record.bestScore == null || result.score > record.bestScore) {
+      record.bestScore = result.score;
+      record.bestRank = result.rank.key;
     }
-    if (result.passed) {
-      if (progress.completed.indexOf(stageId) < 0) progress.completed.push(stageId);
-      progress.unlocked = Math.max(progress.unlocked, Math.min(StageData.stages.length, stageId + 1));
-      progress.bestEarnings[stageId] = Math.max(progress.bestEarnings[stageId] || 0, result.netRevenue);
+  }
+
+  // Returns the promotion earned by this result, or null.
+  function recordResult(stage, result) {
+    const before = careerLevel();
+    const stageId = stage.id;
+    if (stage.dispatch) {
+      recordDispatchResult(result);
+    } else {
+      if (progress.bestScores[stageId] == null || result.score > progress.bestScores[stageId]) {
+        progress.bestScores[stageId] = result.score;
+        progress.bestRanks[stageId] = result.rank.key;
+      }
+      if (result.passed) {
+        if (progress.completed.indexOf(stageId) < 0) progress.completed.push(stageId);
+        progress.unlocked = Math.max(progress.unlocked, Math.min(StageData.stages.length, stageId + 1));
+        progress.bestEarnings[stageId] = Math.max(progress.bestEarnings[stageId] || 0, result.netRevenue);
+      }
     }
     saveProgress();
     updateCampaign();
+    const after = careerLevel();
+    renderCareer();
+    return after > before ? { from: StageData.CAREER[before], to: StageData.CAREER[after] } : null;
+  }
+
+  function promotionHtml(promotion) {
+    const unlocksDispatch = promotion.to.key === "dispatcher";
+    return "<div class=\"promotion-card\" role=\"status\">" +
+      "<small>辞令 / APPOINTMENT</small>" +
+      "<strong>「" + promotion.to.title + "」を命ずる</strong>" +
+      "<span class=\"promotion-path\">" + promotion.from.title + " → " + promotion.to.title + "</span>" +
+      "<p>" + promotion.to.comment + "</p>" +
+      "<em>翠路ロジスティクス株式会社 代表取締役 水城 蒼太（架空の人物）</em>" +
+      (unlocksDispatch ? "<b>新しい仕事「配車便」が解放されました。ミッション選択から挑戦できます。</b>" : "") +
+      "</div>";
   }
 
   function showResult(stage, result, handlers) {
-    recordResult(stage.id, result);
-    if (result.passed && window.CommunityRevenue) {
+    const promotion = recordResult(stage, result);
+    if (promotion) Sfx.play("promote");
+    if (result.passed && window.CommunityRevenue && !stage.dispatch) {
       if (!result.communityCompletionId) {
         result.communityCompletionId = "delivery-" + stage.id + "-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 14);
       }
@@ -385,7 +515,7 @@
       ["資材費（" + materialDetail + "）", "−" + Scoring.yen(result.materialCost)],
       ["破損・荷つぶれ損失", "−" + Scoring.yen(result.damageLoss)],
       ["遅延損失", "−" + Scoring.yen(result.timePenalty)]
-    ].map(function (row, index) {
+    ].concat(stage.leftoverPenaltyRate ? [["積み残し違約金", "−" + Scoring.yen(result.leftoverPenalty)]] : []).map(function (row, index) {
       const negative = (index === 1 && row[1] !== "0件") || (index >= 4 && row[1] !== "−¥0");
       return "<div class=\"score-row\"><span>" + row[0] + "</span><strong" + (negative ? " class=\"score-negative\"" : "") + ">" + row[1] + "</strong></div>";
     }).join("");
@@ -396,9 +526,10 @@
     ];
     if (result.passed && stage.id < StageData.stages.length) actions.push({ label: "次の研修へ", primary: true, action: handlers.next });
     openModal({
-      kicker: "DELIVERY REPORT / MISSION 0" + stage.id,
-      title: result.passed ? "研修クリア" : "目標未達・再点検",
+      kicker: "DELIVERY REPORT / " + missionLabel(stage),
+      title: result.passed ? (stage.dispatch ? "配車便クリア" : "研修クリア") : "目標未達・再点検",
       body:
+        (promotion ? promotionHtml(promotion) : "") +
         "<div class=\"score-hero\"><span class=\"score-rank\">" + result.rank.key + "</span><span><b class=\"score-points\">" + result.score + "</b><br><small class=\"score-label\">SAFETY SCORE / 100</small></span></div>" +
         "<p class=\"" + (result.passed ? "result-pass" : "result-fail") + "\">" +
         (result.passed ? "✓ 安全売上 " + Scoring.yen(result.netRevenue) : "✕ 安全売上 " + Scoring.yen(result.netRevenue) + " / 目標 " + Scoring.yen(stage.targetRevenue)) + "</p>" +
@@ -406,6 +537,89 @@
       actions,
       onClose: handlers.stages
     });
+  }
+
+  function orderTags(pkg) {
+    const tags = [];
+    if (pkg.type === "heavy") tags.push("重量物");
+    if (pkg.protectedCargo) tags.push("破損厳禁・発泡材が必要");
+    if (pkg.keepUpright) tags.push("天地無用");
+    if (!pkg.rotatable) tags.push("回転不可");
+    if (pkg.deliveryOrder) tags.push("配送順 " + pkg.deliveryOrder + "番目");
+    tags.push(pkg.maxStackKg ? "上積み " + pkg.maxStackKg + "kgまで" : "上積み禁止");
+    return tags.join("・");
+  }
+
+  function dispatchSummaryHtml(board, chosen) {
+    const plan = StageData.dispatchPlan(chosen, board.materials);
+    const penaltyRate = Math.round(board.leftoverPenaltyRate * 100);
+    const warnings = [];
+    if (plan.overweightKg) warnings.push("最大積載量を " + plan.overweightKg + "kg 超えています。積み切れない荷物は運賃の" + penaltyRate + "%が違約金です。");
+    if (plan.foamShort) warnings.push("破損厳禁の荷物に対して発泡材が " + plan.foamShort + "個足りません。");
+    if (plan.restraintShort) warnings.push("固定資材が " + plan.restraintShort + "個足りません。全品に固定が必要です。");
+    const revenueOk = plan.estimatedRevenue >= board.targetRevenue;
+    return "<div class=\"dispatch-totals\">" +
+      "<span><small>受注</small><b>" + chosen.length + "件</b></span>" +
+      "<span class=\"" + (plan.overweightKg ? "is-over" : "") + "\"><small>重量</small><b>" + plan.weightKg + " / " + board.maxPayloadKg + "kg</b></span>" +
+      "<span class=\"" + (plan.restraintShort ? "is-over" : "") + "\"><small>固定資材</small><b>" + chosen.length + " / " + plan.restraintCount + "個</b></span>" +
+      "<span class=\"" + (plan.foamShort ? "is-over" : "") + "\"><small>発泡材（破損厳禁）</small><b>" + plan.protectedCount + " / " + board.materials.foam + "個</b></span>" +
+      "<span class=\"" + (revenueOk ? "is-ok" : "") + "\"><small>見込み安全売上</small><b>" + Scoring.yen(plan.estimatedRevenue) + "</b></span>" +
+      "</div>" +
+      "<p class=\"dispatch-note\">見込み = 運賃合計 " + Scoring.yen(plan.fee) + " − 最安の固定資材費 " + Scoring.yen(plan.materialCost) +
+      "。目標 " + Scoring.yen(board.targetRevenue) + (revenueOk ? "に届く見込みです。" : "まであと " + Scoring.yen(board.targetRevenue - plan.estimatedRevenue) + "。") + "</p>" +
+      (warnings.length ? "<ul class=\"dispatch-warnings\">" + warnings.map(function (w) { return "<li>" + w + "</li>"; }).join("") + "</ul>" : "");
+  }
+
+  function showDispatchBoard(board, preselectedIds) {
+    const selected = new Set(preselectedIds || []);
+    const m = board.materials;
+    const rows = board.orders.map(function (pkg) {
+      return "<label class=\"dispatch-order type-" + pkg.type + "\">" +
+        "<input type=\"checkbox\" data-order=\"" + pkg.id + "\"" + (selected.has(pkg.id) ? " checked" : "") + ">" +
+        "<i aria-hidden=\"true\">" + escapeHtml(pkg.icon || "箱") + "</i>" +
+        "<span class=\"order-main\"><strong>" + escapeHtml(pkg.name) + "</strong><small>" + escapeHtml(pkg.client) + "　" + orderTags(pkg) + "</small></span>" +
+        "<span class=\"order-kg\">" + pkg.weightKg + "kg</span>" +
+        "<span class=\"order-fee\">" + Scoring.yen(pkg.fee) + "</span>" +
+        "</label>";
+    }).join("");
+    openModal({
+      wide: true,
+      kicker: "DISPATCH BOARD / 配車係の依頼ボード",
+      title: "どの依頼を受けますか？",
+      onClose: showStart,
+      body:
+        "<p class=\"dispatch-brief\">最大積載量 <b>" + board.maxPayloadKg.toLocaleString("ja-JP") + "kg</b>　固定資材 コンパネ" + m.panel + "・発泡材" + m.foam + "・ベルト" + m.strap +
+        "（計" + (m.panel + m.foam + m.strap) + "個）　目標安全売上 <b>" + Scoring.yen(board.targetRevenue) + "</b><br>" +
+        "受けた荷物は倉庫で荷役し、すべて積むのが原則です。積み残すと運賃の" + Math.round(board.leftoverPenaltyRate * 100) + "%を違約金として差し引きます。</p>" +
+        "<div class=\"dispatch-orders\">" + rows + "</div>" +
+        "<div id=\"dispatchSummary\" class=\"dispatch-summary\" aria-live=\"polite\"></div>",
+      actions: [
+        { label: "やめる", action: showStart },
+        { label: "別の依頼に替える", action: function () { showDispatchBoard(StageData.createDispatchBoard(newDispatchSeed())); } },
+        { label: "受注して倉庫へ", primary: true, action: function () {
+          const ids = Array.from(selected);
+          hideStart();
+          if (window.game) window.game.startStage(StageData.createDispatchStage(board, ids));
+        } }
+      ]
+    });
+    if (!els.modalBody.querySelectorAll) return;
+    const summary = els.modalBody.querySelector("#dispatchSummary");
+    const acceptButton = els.modalActions.lastChild;
+    function refresh() {
+      const chosen = board.orders.filter(function (pkg) { return selected.has(pkg.id); });
+      summary.innerHTML = dispatchSummaryHtml(board, chosen);
+      acceptButton.disabled = chosen.length === 0;
+    }
+    Array.from(els.modalBody.querySelectorAll("input[data-order]")).forEach(function (input) {
+      input.addEventListener("change", function () {
+        if (input.checked) selected.add(input.getAttribute("data-order"));
+        else selected.delete(input.getAttribute("data-order"));
+        Sfx.play("pick");
+        refresh();
+      });
+    });
+    refresh();
   }
 
   window.UI = {
@@ -423,6 +637,8 @@
     openModal,
     closeModal,
     renderStageGrid,
+    showDispatchBoard,
+    careerLevel,
     getProgress: function () { return progress; },
     getCampaignEarnings: campaignEarnings
   };

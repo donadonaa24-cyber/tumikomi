@@ -125,6 +125,15 @@
     if (stage.rules.delivery && deliveryInversions) warnings.push("先に降ろす荷物が奥にあります");
     if (!placed.length) blockingIssues.push("荷物が1個も積まれていません");
 
+    const leftoverRate = stage.leftoverPenaltyRate || 0;
+    const leftoverPackages = leftoverRate
+      ? packages.filter(function (pkg) { return !pkg.placed && !pkg.forkDamaged; })
+      : [];
+    const leftoverPenalty = leftoverPackages.reduce(function (sum, pkg) {
+      return sum + Math.round(pkg.fee * leftoverRate / 100) * 100;
+    }, 0);
+    if (leftoverPackages.length) warnings.push("受注した荷物の積み残し " + leftoverPackages.length + "件：違約金 " + yen(leftoverPenalty));
+
     const damagePackages = forkDamagePackages.slice();
     protectionIssues.forEach(function (item) { damagePackages.push(item.pkg); });
     crushed.forEach(function (item) {
@@ -156,7 +165,9 @@
       warnings,
       damagePackages,
       forkDamagePackages,
-      damageLoss
+      damageLoss,
+      leftoverPackages,
+      leftoverPenalty
     };
   }
 
@@ -206,8 +217,9 @@
     const overdue = Math.max(0, overtimeSeconds || 0);
     const timePenalty = overdue > 0 ? Math.ceil(overdue / 5) * 500 : 0;
     if (timePenalty) penalties.push("出発時刻超過：" + yen(timePenalty) + "減収");
+    if (audit.leftoverPenalty) penalties.push("受注した荷物の積み残し " + audit.leftoverPackages.length + "件：違約金 " + yen(audit.leftoverPenalty));
     const score = Math.max(0, Math.min(100, Math.round(safety)));
-    const netRevenue = Math.max(0, audit.grossRevenue - audit.materialCost - audit.damageLoss - timePenalty);
+    const netRevenue = Math.max(0, audit.grossRevenue - audit.materialCost - audit.damageLoss - timePenalty - audit.leftoverPenalty);
     const revenueMet = netRevenue >= stage.targetRevenue;
     const passed = audit.blockingIssues.length === 0 && score >= 70 && revenueMet;
 

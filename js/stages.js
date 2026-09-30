@@ -175,5 +175,202 @@
     }
   ];
 
-  window.StageData = { stages, TRUCK: BASE_TRUCK, CAMPAIGN_TARGET };
+  // Career ladder: each mission clear is a promotion. Names and comments are fictional.
+  const CAREER = [
+    { key: "trainee", title: "研修生", requirement: "入社時の役職" },
+    { key: "handler", title: "荷役スタッフ", mission: 1, requirement: "MISSION 01 クリア",
+      comment: "重量を読んでから動けるようになった。明日から倉庫の一員として荷を任せます。" },
+    { key: "driver", title: "乗務員", mission: 2, requirement: "MISSION 02 クリア",
+      comment: "重心を整えてから走り出せる人に、ハンドルを預けます。" },
+    { key: "leader", title: "積付けリーダー", mission: 3, requirement: "MISSION 03 クリア",
+      comment: "壊れ物を守り切った判断を、今度は後輩へ伝えてください。" },
+    { key: "chief", title: "班長", mission: 4, requirement: "MISSION 04 クリア",
+      comment: "一本のベルトにも理由がある。その理由を言葉にできる班長であってください。" },
+    { key: "dispatcher", title: "配車係", mission: 5, requirement: "MISSION 05 クリア",
+      comment: "これからは、どの依頼を受けるかも仕事です。受けた荷は必ず届け切ってください。" },
+    { key: "manager", title: "営業所長", dispatch: true, requirement: "配車便を1回クリア",
+      comment: "受ける勇気と、断る判断。その両方で営業所を守ってください。" }
+  ];
+
+  // Dispatch run: the player chooses which orders to accept before the normal pickup/loading/drive.
+  const DISPATCH = {
+    id: 6,
+    orderCount: 12,
+    maxPayloadKg: 1800,
+    timeLimit: 300,
+    leftoverPenaltyRate: .5,
+    targetRatio: .92
+  };
+  const CLIENTS = {
+    normal: ["地域の小売店", "事務用品の卸売", "住宅設備の工務店", "イベント会社", "学校の事務室"],
+    heavy: ["製造工場", "建設現場", "設備保守センター"],
+    glass: ["研究施設", "建具店", "照明の専門店"],
+    pet: ["動物病院", "ペット用品店"],
+    priority: ["医療機関", "部品センター", "市役所の倉庫"]
+  };
+  const MATERIAL_COST = { panel: 600, foam: 300, strap: 500 };
+
+  function seededRandom(seed) {
+    let state = (seed >>> 0) || 1;
+    return function () {
+      state = (state + 0x6D2B79F5) >>> 0;
+      let t = state;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function dispatchTemplates() {
+    const byType = { normal: [], heavy: [], protected: [] };
+    stages.forEach(function (stage) {
+      stage.packages.forEach(function (pkg) {
+        if (pkg.type === "heavy") byType.heavy.push(pkg);
+        else if (pkg.protectedCargo) byType.protected.push(pkg);
+        // "通常便" names would read oddly as priority orders ("配送2・通常便B"), so they are left out.
+        else if (pkg.type === "normal" && !/^通常便/.test(pkg.name)) byType.normal.push(pkg);
+      });
+    });
+    return byType;
+  }
+
+  function pickDistinct(list, count, random) {
+    const pool = list.slice();
+    const picked = [];
+    while (picked.length < count && pool.length) {
+      const index = Math.floor(random() * pool.length);
+      const item = pool.splice(index, 1)[0];
+      if (picked.some(function (other) { return other.name === item.name; })) continue;
+      picked.push(item);
+    }
+    return picked;
+  }
+
+  // Cheapest legal restraint plan for a set of orders: foam for protected cargo, then the cheapest remaining stock.
+  function dispatchPlan(orders, materials) {
+    const protectedCount = orders.filter(function (pkg) { return pkg.protectedCargo; }).length;
+    const restraintCount = materials.panel + materials.foam + materials.strap;
+    const weightKg = orders.reduce(function (sum, pkg) { return sum + pkg.weightKg; }, 0);
+    const fee = orders.reduce(function (sum, pkg) { return sum + pkg.fee; }, 0);
+    let foamLeft = materials.foam - protectedCount;
+    let strapLeft = materials.strap;
+    let materialCost = protectedCount * MATERIAL_COST.foam;
+    orders.filter(function (pkg) { return !pkg.protectedCargo; }).forEach(function () {
+      if (foamLeft > 0) { foamLeft -= 1; materialCost += MATERIAL_COST.foam; }
+      else if (strapLeft > 0) { strapLeft -= 1; materialCost += MATERIAL_COST.strap; }
+      else materialCost += MATERIAL_COST.panel;
+    });
+    return {
+      weightKg,
+      fee,
+      materialCost,
+      protectedCount,
+      restraintCount,
+      overweightKg: Math.max(0, weightKg - DISPATCH.maxPayloadKg),
+      foamShort: Math.max(0, protectedCount - materials.foam),
+      restraintShort: Math.max(0, orders.length - restraintCount),
+      estimatedRevenue: fee - materialCost
+    };
+  }
+
+  function bestDispatchRevenue(orders, materials) {
+    let best = 0;
+    const total = 1 << orders.length;
+    for (let mask = 1; mask < total; mask += 1) {
+      const chosen = orders.filter(function (_, index) { return mask & (1 << index); });
+      const plan = dispatchPlan(chosen, materials);
+      if (plan.overweightKg || plan.foamShort || plan.restraintShort) continue;
+      best = Math.max(best, plan.estimatedRevenue);
+    }
+    return best;
+  }
+
+  function createDispatchBoard(seed) {
+    const random = seededRandom(seed);
+    const templates = dispatchTemplates();
+    const materials = {
+      panel: 2 + Math.floor(random() * 2),
+      foam: 2 + Math.floor(random() * 2),
+      strap: 3 + Math.floor(random() * 2)
+    };
+    const client = function (type) {
+      const list = CLIENTS[type] || CLIENTS.normal;
+      return list[Math.floor(random() * list.length)];
+    };
+    const jitter = function (fee) { return Math.round(fee * (.85 + random() * .3) / 100) * 100; };
+    const orders = [];
+    const add = function (source, type, options) {
+      const index = orders.length + 1;
+      const pkg = cargo("d_" + index, type, source.width, source.height, Object.assign({
+        name: source.name,
+        weightKg: source.weightKg,
+        fee: jitter(source.fee),
+        replacementCost: source.replacementCost,
+        maxStackKg: source.maxStackKg,
+        keepUpright: source.keepUpright,
+        rotatable: source.rotatable
+      }, options || {}));
+      pkg.client = client(options && options.clientType ? options.clientType : type);
+      pkg.orderNo = index;
+      orders.push(pkg);
+    };
+    pickDistinct(templates.heavy, 3, random).forEach(function (source) { add(source, "heavy"); });
+    pickDistinct(templates.protected, 3, random).forEach(function (source) { add(source, source.type); });
+    const normals = pickDistinct(templates.normal, 6, random);
+    normals.slice(0, 3).forEach(function (source, index) {
+      add(source, "priority", {
+        name: "配送" + (index + 1) + "・" + source.name,
+        fee: Math.round(jitter(source.fee) * 1.3 / 100) * 100,
+        deliveryOrder: index + 1,
+        clientType: "priority"
+      });
+    });
+    normals.slice(3).forEach(function (source) { add(source, "normal"); });
+    const best = bestDispatchRevenue(orders, materials);
+    return {
+      seed,
+      orders,
+      materials,
+      maxPayloadKg: DISPATCH.maxPayloadKg,
+      timeLimit: DISPATCH.timeLimit,
+      leftoverPenaltyRate: DISPATCH.leftoverPenaltyRate,
+      bestRevenue: best,
+      targetRevenue: Math.floor(best * DISPATCH.targetRatio / 500) * 500
+    };
+  }
+
+  function createDispatchStage(board, acceptedIds) {
+    const accepted = board.orders.filter(function (pkg) { return acceptedIds.indexOf(pkg.id) >= 0; })
+      .map(function (pkg) { return JSON.parse(JSON.stringify(pkg)); });
+    return {
+      id: DISPATCH.id,
+      dispatch: true,
+      board,
+      acceptedIds: acceptedIds.slice(),
+      title: "配車便・受けた荷を届け切れ",
+      objective: "受注した依頼を積み残さず、安全売上の目標を超える",
+      description: "配車係として受けた依頼の便です。積み残した依頼は運賃の50%を違約金として差し引きます。重量・固定資材・破損厳禁を考えて受注したかが試されます。",
+      lesson: "受ける前に積めるかを考える。受けた荷を届け切ることが、次の依頼につながる信用です。",
+      tip: "受注した荷物はすべて積むのが基本です。積めない荷物がある場合、違約金と運賃を比べて判断します。",
+      timeLimit: board.timeLimit,
+      targetRevenue: board.targetRevenue,
+      truck: truck(board.maxPayloadKg),
+      materials: Object.assign({}, board.materials),
+      leftoverPenaltyRate: board.leftoverPenaltyRate,
+      rules: { weight: true, balance: true, protected: true, securement: true, delivery: true },
+      packages: accepted
+    };
+  }
+
+  window.StageData = {
+    stages,
+    TRUCK: BASE_TRUCK,
+    CAMPAIGN_TARGET,
+    CAREER,
+    DISPATCH,
+    createDispatchBoard,
+    createDispatchStage,
+    dispatchPlan,
+    bestDispatchRevenue
+  };
 })();

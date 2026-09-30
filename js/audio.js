@@ -63,7 +63,11 @@
       depart: function () { noise(.35, .035); tone(75, .55, "sawtooth", .025, 0, 125); },
       bump: function () { noise(.12, .06); tone(90, .12, "sine", .05); },
       glass: function () { tone(1180, .18, "sine", .028); tone(1640, .24, "sine", .02, .04); noise(.2, .018); },
-      clear: function () { tone(392, .16, "triangle", .04); tone(523, .18, "triangle", .04, .11); tone(659, .28, "triangle", .04, .22); }
+      clear: function () { tone(392, .16, "triangle", .04); tone(523, .18, "triangle", .04, .11); tone(659, .28, "triangle", .04, .22); },
+      promote: function () {
+        [523, 659, 784, 1047].forEach(function (frequency, index) { tone(frequency, .22, "triangle", .045, .45 + index * .1); });
+        tone(523, .9, "sine", .03, .9); tone(784, .9, "sine", .025, .9); tone(1047, .9, "sine", .02, .9);
+      }
     };
     if (patterns[name]) patterns[name]();
   }

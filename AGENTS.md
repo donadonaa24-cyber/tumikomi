@@ -89,6 +89,7 @@
   - 上段の手動差込: `node pallet-assist-test.js`
   - ホーム/UI導線: `node homepage-smoke-test.js`
   - 共有売上API: `node server-test.js`
+  - 役職・配車便: `node dispatch-career-test.js`
 - 後段テストは前段テストを`require`して連鎖実行する。実行範囲を見積もって選ぶ。
 
 ## 作業完了時の必須確認

@@ -2,12 +2,13 @@
   "use strict";
   const P = Game.prototype;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-  const alive = p => !p.transported && !p.forkDamaged;
+  // Dispatch runs can hold fewer pallets than the stacked/front-rear yard slots, so missing slots count as gone.
+  const alive = p => Boolean(p) && !p.transported && !p.forkDamaged;
   const oldStart = P.startStage;
   P.startStage = function (id) {
     this.yardDebris = []; this.road = null;
     oldStart.call(this, id);
-    if (id >= 2) UI.dialogue("爪を上段の穴の高さへ合わせ、手動で前進して75%以上差し込みます。その後、上ボタン／Wで持上げ。", "boss");
+    if (this.stage && this.stage.id >= 2) UI.dialogue("爪を上段の穴の高さへ合わせ、手動で前進して75%以上差し込みます。その後、上ボタン／Wで持上げ。", "boss");
   };
   const oldLayout = P.layoutPickupBay;
   P.yardRelations = function () {
