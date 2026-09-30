@@ -999,3 +999,16 @@ canvas:fullscreen { width: 100vw; height: 100dvh; object-fit: contain; backgroun
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
   .home-marquee-track, .home-hero-controls button::after { animation: none !important; }
 }
+
+.home-footer .copyright-notice {
+  color: #b9a98d;
+  line-height: 1.6;
+}
+
+.quick-tip .game-copyright-notice {
+  display: block;
+  margin-top: 4px;
+  color: #e9dfcd;
+  font-size: 9px;
+  line-height: 1.4;
+}

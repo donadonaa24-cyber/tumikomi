@@ -53,6 +53,7 @@ assert(/id="communityRevenueTotal"/.test(indexSource) && /id="communityDeliveryC
 assert(/現在、募集は行っておりません/.test(indexSource), "Recruitment must clearly state that no positions are open");
 assert(/実在する企業・団体・人物とは一切関係ありません/.test(indexSource), "Homepage must include a prominent fictional-company disclaimer");
 assert((indexSource.match(/https:\/\/donadonaa24-cyber\.github\.io\/aniani-asobiba\//g) || []).length >= 2, "Homepage header and footer must link back to the ANIANI portal");
+assert((indexSource.match(/無断転載・無断配布を禁止します。/g) || []).length >= 2, "Homepage and game must include rights notices");
 assert(!/豊興|1個の荷物から3PLまで|積めるもんなら積んでみろ/.test(indexSource), "Reference-site copy and the retired slogan must not be reused");
 ["home-hero-pickup.png", "home-hero-loading.png", "home-hero-securement.png", "company-team.png",
   "company-office.png", "company-sales.png", "company-president.png", "company-manager-east.png",
