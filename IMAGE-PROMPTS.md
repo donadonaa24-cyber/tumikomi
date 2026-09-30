@@ -72,3 +72,39 @@ Extract the entire vehicle including mirrors and wheels from this exact image. R
 Edit this transparent PNG vehicle sprite. Preserve the existing alpha transparency exactly. Remove the red roof lightbar and replace police black-and-white livery with uniform metallic silver car paint. Ordinary civilian sedan, not a police car. Keep same overhead view, pointing up, exact silhouette, transparent pixels unchanged. Absolutely no checkerboard pattern, no backdrop.
 
 注意: 普通車の生成出力には不透明な背景が残ったため、ゲーム描画時に車体輪郭のクリッピングを適用しています。透過PNGとしては扱っていません。車両・道路の画像は装飾用で、接触判定はゲーム内座標で管理します。
+
+## 会話パートの立ち絵（差し替え用・未生成）
+
+現在の立ち絵は `js/portraits.js` がコードで描くSVGです。生成画像に差し替える場合は、以下のプロンプトで人物ごと・表情ごとに生成し、`assets/images/chara-<人物キー>-<表情>.png` として保存してください。そのうえで `js/story.js` の `CHARACTERS.<人物キー>.art` に、使う表情だけパスを登録します（例: `art: { normal: "assets/images/chara-senpai-normal.png", smile: "assets/images/chara-senpai-smile.png" }`）。登録のない表情はSVGのまま表示されます。
+
+- 表情キー: `normal`（通常）、`smile`（笑顔）、`serious`（真剣）、`surprised`（驚き）、`cheer`（大喜び）、`concern`（心配）
+- 画像: 縦長 400:520、胸から上、正面やや斜め、背景透過、顔の位置と大きさを全員でそろえる
+- 人物キー: `president`、`east`、`central`、`west`、`senpai`、`doki`
+
+### 共通スタイル
+
+Clean Japanese anime-style bust-up character illustration for a visual-novel style game, waist-up framing cropped at mid-chest, facing slightly toward the viewer, consistent head size and eye line across the whole cast, soft cel shading with clear line art, warm natural skin tones, transparent background, no text, no logo, no watermark, completely fictional person with an original face, no resemblance to public figures or existing characters. Expression: {expression}.
+
+### president（代表取締役 水城 蒼太）
+
+A fictional Japanese man in his mid-50s, calm and dignified, gray swept-back hair, charcoal suit, white shirt, deep green tie, gentle authority.
+
+### east（東湾統括部長 青柳 直樹）
+
+A fictional Japanese man in his late 40s, practical and kind, short dark hair, thin rectangular glasses, navy work jacket with green piping over a white collared shirt.
+
+### central（中京営業所長 森川 遥）
+
+A fictional Japanese woman in her early 40s, intelligent and composed, dark brown bob haircut, tailored navy jacket over a muted green blouse.
+
+### west（西日本統括部長 結城 慎吾）
+
+A fictional Japanese man in his early 40s, energetic and trustworthy, short spiky black hair, navy logistics work jacket with green piping.
+
+### senpai（先輩乗務員 早瀬 陸）
+
+A fictional Japanese truck driver in their early 30s, friendly mentor, messy short brown hair, a white towel around the neck, green polo shirt under a high-visibility yellow-green safety vest with silver reflective stripes.
+
+### doki（同期・荷役スタッフ 小田 ひより）
+
+A fictional Japanese warehouse forklift operator in their early 20s, cheerful and earnest, brown ponytail, white safety helmet with a green stripe, blue polo shirt under a high-visibility yellow-green safety vest with silver reflective stripes.

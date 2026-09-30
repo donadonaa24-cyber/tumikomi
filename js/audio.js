@@ -64,6 +64,8 @@
       bump: function () { noise(.12, .06); tone(90, .12, "sine", .05); },
       glass: function () { tone(1180, .18, "sine", .028); tone(1640, .24, "sine", .02, .04); noise(.2, .018); },
       clear: function () { tone(392, .16, "triangle", .04); tone(523, .18, "triangle", .04, .11); tone(659, .28, "triangle", .04, .22); },
+      review: function () { [0, .38, .76, 1.14, 1.52].forEach(function (delay) { tone(880, .06, "triangle", .02, .25 + delay, 1320); }); },
+      stamp: function () { noise(.18, .08); tone(70, .3, "sine", .07, 0, 45); },
       promote: function () {
         [523, 659, 784, 1047].forEach(function (frequency, index) { tone(frequency, .22, "triangle", .045, .45 + index * .1); });
         tone(523, .9, "sine", .03, .9); tone(784, .9, "sine", .025, .9); tone(1047, .9, "sine", .02, .9);

@@ -1140,3 +1140,143 @@ canvas:fullscreen { width: 100vw; height: 100dvh; object-fit: contain; backgroun
   .dispatch-warnings { font-size: 11px; }
   .dispatch-order { padding: 6px 8px; }
 }
+
+/* Talk scenes: visual-novel briefings and evaluations */
+.talk-screen {
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  padding: 0 max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background: radial-gradient(ellipse at 50% 100%, rgba(37,211,145,.14), transparent 60%), linear-gradient(180deg, rgba(7,11,18,.55), rgba(7,11,18,.94));
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .22s ease, visibility .22s ease;
+}
+.talk-screen.is-open { opacity: 1; visibility: visible; }
+.talk-stage { position: relative; min-height: 0; display: flex; align-items: flex-end; justify-content: center; gap: 2%; cursor: pointer; overflow: hidden; }
+.talk-figure { position: relative; flex: 0 1 30%; max-width: 330px; height: 100%; margin: 0; display: flex; align-items: flex-end; justify-content: center; filter: brightness(.5) saturate(.7); transform: translateY(12px) scale(.94); transform-origin: bottom center; transition: filter .25s ease, transform .25s ease; }
+.talk-figure img { display: block; width: 100%; max-height: 100%; object-fit: contain; object-position: bottom center; filter: drop-shadow(0 12px 24px rgba(0,0,0,.45)); }
+.talk-figure.is-speaking { z-index: 2; filter: none; transform: translateY(0) scale(1); }
+.talk-figure.is-hop img { animation: talk-hop .32s ease; }
+@keyframes talk-hop { 0% { transform: translateY(0); } 40% { transform: translateY(-10px); } 100% { transform: translateY(0); } }
+.talk-box {
+  position: relative;
+  z-index: 3;
+  width: min(980px, 100%);
+  justify-self: center;
+  margin-top: -40px;
+  padding: 14px 20px 12px;
+  border: 1px solid rgba(124,232,184,.34);
+  border-radius: 16px;
+  background: linear-gradient(120deg, rgba(37,211,145,.1), transparent 45%), rgba(14,22,36,.96);
+  box-shadow: var(--shadow);
+}
+.talk-box .eyebrow { margin: 0; color: var(--coral); }
+.talk-speaker { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 4px 0 6px; }
+.talk-speaker strong { color: var(--paper); font-family: Georgia, "Yu Mincho", serif; font-size: 22px; }
+.talk-speaker small { color: var(--amber); font-size: 12px; font-weight: 800; }
+.talk-speaker span { margin-left: auto; color: #6f7b8b; font: 700 10px ui-monospace, monospace; }
+.talk-text { min-height: 3.6em; margin: 0; color: var(--paper); font-size: 18px; line-height: 1.75; cursor: pointer; }
+.talk-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+.talk-actions button, .ceremony-reveal button { min-height: 42px; padding: 8px 18px; border: 1px solid rgba(243,234,216,.2); border-radius: 8px; background: transparent; color: var(--paper-muted); font-weight: 750; cursor: pointer; }
+.talk-actions .primary, .ceremony-reveal .primary { border-color: var(--coral); background: var(--coral); color: #062733; }
+.talk-note { display: block; margin-top: 6px; color: #6f7b8b; font-size: 10px; }
+.speaker-avatar.has-art { background-size: 180% auto !important; background-position: center 14% !important; background-repeat: no-repeat !important; }
+
+/* Promotion ceremony */
+.ceremony-screen {
+  position: fixed;
+  z-index: 45;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: radial-gradient(circle at 50% 30%, rgba(74,168,255,.25), transparent 55%), rgba(5,9,16,.92);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .25s ease, visibility .25s ease;
+}
+.ceremony-screen.is-open { opacity: 1; visibility: visible; }
+.confetti-canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
+.ceremony-card { position: relative; z-index: 1; width: min(760px, 100%); max-height: calc(100vh - 32px); overflow: auto; padding: 22px 26px; border: 1px solid rgba(74,168,255,.45); border-radius: 18px; background: linear-gradient(140deg, rgba(74,168,255,.12), transparent 50%), #121b2a; box-shadow: var(--shadow); text-align: center; cursor: pointer; }
+.ceremony-card .eyebrow { margin: 0 0 10px; color: var(--amber); }
+.ceremony-sheet { display: grid; gap: 6px; text-align: left; }
+.review-row { display: grid; grid-template-columns: 70px 1fr 44px; align-items: center; gap: 10px; padding: 7px 12px; border-radius: 9px; background: rgba(255,255,255,.045); opacity: 0; transform: translateX(-16px); animation: review-in .4s ease forwards; animation-delay: var(--delay, 0s); }
+.review-row span { color: var(--paper); font-weight: 800; }
+.review-row small { color: #8f9bab; font-size: 12px; }
+.review-total { border: 1px solid rgba(74,168,255,.4); background: rgba(74,168,255,.08); }
+@keyframes review-in { to { opacity: 1; transform: none; } }
+.grade { display: inline-grid; place-items: center; width: 40px; height: 40px; border: 3px solid currentColor; border-radius: 50%; font: 900 22px Georgia, serif; transform: rotate(-8deg); }
+.grade-S { color: #ffbd59; }
+.grade-A { color: #25d391; }
+.grade-B { color: #4aa8ff; }
+.grade-C { color: #b0b8c4; }
+.grade-D { color: #ff715b; }
+.ceremony-stamp {
+  position: absolute;
+  left: 50%;
+  top: 22%;
+  padding: 6px 30px;
+  border: 8px double #ff5b47;
+  border-radius: 14px;
+  color: #ff5b47;
+  font: 900 clamp(56px, 12vw, 110px)/1 Georgia, "Yu Mincho", serif;
+  letter-spacing: .1em;
+  background: rgba(18,27,42,.4);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(3) rotate(-14deg);
+  pointer-events: none;
+  z-index: 3;
+}
+.ceremony-screen.is-stamped .ceremony-stamp { animation: stamp-slam .5s cubic-bezier(.2, 1.6, .4, 1) forwards, stamp-fade .6s ease 1.6s forwards; }
+@keyframes stamp-slam {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(3) rotate(-14deg); }
+  60% { opacity: 1; transform: translate(-50%, -50%) scale(.92) rotate(-12deg); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(-12deg); }
+}
+@keyframes stamp-fade { to { opacity: .16; } }
+.ceremony-screen.is-stamped .ceremony-card { animation: ceremony-shake .35s ease; }
+@keyframes ceremony-shake { 0%, 100% { transform: none; } 25% { transform: translate(-6px, 3px); } 50% { transform: translate(5px, -4px); } 75% { transform: translate(-3px, 2px); } }
+.ceremony-reveal { max-height: 0; overflow: hidden; opacity: 0; transition: opacity .5s ease .3s, max-height .6s ease .2s; }
+.ceremony-screen.is-stamped .ceremony-reveal { max-height: 900px; opacity: 1; }
+.ceremony-title { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 16px 0 6px; }
+.ceremony-title small { color: #8f9bab; font-size: 16px; text-decoration: line-through; }
+.ceremony-title i { color: var(--amber); font-style: normal; font-size: 22px; }
+.ceremony-title strong { color: #ffbd59; font-family: Georgia, "Yu Mincho", serif; font-size: clamp(30px, 6vw, 46px); text-shadow: 0 0 24px rgba(255,189,89,.5); }
+.ceremony-cast { display: flex; justify-content: center; align-items: flex-end; gap: 2%; height: 190px; }
+.ceremony-cast .talk-figure { flex-basis: 28%; filter: brightness(.7); transform: scale(.9); }
+.ceremony-cast .talk-figure.is-speaking { filter: none; transform: scale(1.04); }
+.ceremony-line { min-height: 3.2em; margin: 8px 0 12px; color: var(--paper); font-size: 16px; line-height: 1.7; }
+.ceremony-line b { margin-right: 6px; color: var(--amber); }
+.career-badge.is-promoted { animation: badge-glow 1s ease 4; border-color: #ffbd59; color: #ffbd59; }
+@keyframes badge-glow { 50% { box-shadow: 0 0 18px rgba(255,189,89,.8); } }
+
+/* Review sheet inside the delivery report */
+.report-review { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin: 0 0 14px; }
+.report-review span { display: grid; justify-items: center; gap: 4px; padding: 8px 4px; border-radius: 9px; background: rgba(255,255,255,.045); }
+.report-review small { color: #8f9bab; font-size: 11px; }
+.report-review .grade { width: 34px; height: 34px; font-size: 18px; }
+.report-review .is-total { border: 1px solid rgba(74,168,255,.4); }
+
+@media (max-width: 620px) {
+  .talk-figure { flex-basis: 40%; }
+  .talk-speaker strong { font-size: 17px; }
+  .talk-text { font-size: 15px; }
+  .ceremony-cast { height: 140px; }
+}
+@media (max-height: 500px) {
+  .talk-box { margin-top: -24px; padding: 8px 14px; }
+  .talk-text { min-height: 2.8em; font-size: 14px; line-height: 1.55; }
+  .talk-actions button { min-height: 34px; }
+  .talk-note { display: none; }
+  .ceremony-card { padding: 12px 16px; }
+  .review-row { padding: 4px 10px; }
+  .grade { width: 30px; height: 30px; font-size: 16px; }
+  .ceremony-cast { height: 110px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .review-row { opacity: 1; transform: none; animation: none; }
+  .ceremony-screen.is-stamped .ceremony-stamp { animation: none; opacity: .9; transform: translate(-50%, -50%) rotate(-12deg); }
+}

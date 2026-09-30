@@ -29,9 +29,11 @@
 - UI/DOM: `index.html`, `css/style.css`
 - ミッション定義: `js/stages.js`
 - ゲーム本体: `js/game.js`
-- 倉庫・配送拡張: `js/transport.js`
+- 倉庫拡張: `js/transport.js`
+- 夜間配送: `js/drive.js`
 - 配置判定: `js/collision.js`
 - 採点: `js/scoring.js`
+- 会話パート: `js/story.js`、立ち絵: `js/portraits.js`
 - 進捗/UI: `js/ui.js`
 - 入力: `js/input.js`, `js/main.js`
 - 共有売上: `js/community.js`, `server.js`, `data/community-revenue.json`
@@ -68,7 +70,7 @@
 ## 実装ルール
 
 - 現行のグローバルIIFE構成と`index.html`のスクリプト読込順を確認してから変更する。
-- `js/transport.js`は`Game.prototype`を後から拡張・上書きするため、`js/game.js`との二重定義に注意する。
+- `js/transport.js`と`js/drive.js`は`Game.prototype`を後から拡張・上書きするため、`js/game.js`との二重定義に注意する。配送の処理は`js/drive.js`だけに置く。
 - ゲーム内数値は実際の法令上の速度・処分を表すものではないという注記を維持する。
 - 架空企業・架空人物・AI生成人物画像の免責表示を維持する。
 - デスクトップとスマホの両UI、ポインター操作とWASD/矢印操作の両方への影響を確認する。
@@ -81,15 +83,16 @@
 - テストはNode.jsの単体スクリプトで、外部テストフレームワークは使わない。
 - 主な関連テスト:
   - 基本荷役・積付け・採点: `node smoke-test.js`
-  - 段積み・前後配置・配送: `node transport-test.js`
-  - 配送10パターン: `node road-pattern-test.js`
+  - 段積み・前後配置・配送の操作と判定: `node transport-test.js`
+  - 配送コースの完走と交通の流れ: `node road-pattern-test.js`
   - 上段荷役と速度同期: `node pickup-motion-test.js`
-  - 追越・左側通行: `node road-yield-test.js`
+  - 交通の挙動（車間・車線変更・合流）: `node road-yield-test.js`
   - WASD・一時停止: `node keyboard-pause-test.js`
   - 上段の手動差込: `node pallet-assist-test.js`
   - ホーム/UI導線: `node homepage-smoke-test.js`
   - 共有売上API: `node server-test.js`
   - 役職・配車便: `node dispatch-career-test.js`
+  - 会話パート: `node story-talk-test.js`
 - 後段テストは前段テストを`require`して連鎖実行する。実行範囲を見積もって選ぶ。
 
 ## 作業完了時の必須確認

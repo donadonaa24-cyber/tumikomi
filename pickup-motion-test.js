@@ -31,10 +31,10 @@ for (const stage of [2,3,4,5]) {
   }
 }
 function movement(speed) {
-  const g = new Game({getContext:()=>ctx}); g.startStage(1); g.beginDrive();
-  g.road.speed=speed; g.road.gas=speed===120; g.road.cars=[]; g.road.events=[];
+  const g = new Game({getContext:()=>ctx}); g.startStage(1); g.beginDrive(5);
+  Object.assign(g.road, { speed, cars: [], events: [], patrol: null, spawnTimer: 1e9, fastTimer: 1e9 });
   const initial=g.roadObjectY(500); g.updateRoad(.1);
   return g.roadObjectY(500)-initial;
 }
-assert(Math.abs(movement(120)/movement(80)-1.5)<.00001);
+assert(Math.abs(movement(90)/movement(60)-1.5)<.00001);
 console.log("Upper pallet pickup via pad/pointer passed for missions 2–5; road movement scales exactly with speed.");

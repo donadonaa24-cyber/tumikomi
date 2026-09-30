@@ -10,7 +10,7 @@
 
   function fallbackProgress() {
     return {
-      unlocked: 1, completed: [], bestScores: {}, bestRanks: {}, bestEarnings: {}, sound: true,
+      unlocked: 1, completed: [], bestScores: {}, bestRanks: {}, bestEarnings: {}, sound: true, talk: true,
       dispatch: { plays: 0, clears: 0, bestEarnings: null, bestScore: null, bestRank: null }
     };
   }
@@ -86,7 +86,10 @@
       "startScreen", "stageGrid", "modal", "modalKicker", "modalTitle", "modalBody", "modalActions", "modalClose",
       "dialoguePanel", "speakerAvatar", "speakerName", "dialogueText", "toast", "soundButton", "resetProgressButton",
       "campaignBadge", "campaignTotal", "campaignTarget", "campaignSummary", "editionBadge",
-      "careerBadge", "careerPanel", "dispatchPanel"]
+      "careerBadge", "careerPanel", "dispatchPanel",
+      "talkScreen", "talkStage", "talkKicker", "talkName", "talkRole", "talkText", "talkCount", "talkNext", "talkSkip",
+      "talkToggleButton", "ceremonyScreen", "ceremonyCard", "ceremonySheet", "ceremonyTitle", "ceremonyCast", "ceremonyLine",
+      "ceremonyNext", "confettiCanvas"]
       .forEach(function (id) { els[id] = document.getElementById(id); });
 
     Sfx.setEnabled(progress.sound !== false);
@@ -126,6 +129,7 @@
         showHome();
       });
     }
+    initTalk();
     els.resetProgressButton.addEventListener("click", function () {
       openModal({
         kicker: "RESET RECORD",
@@ -135,8 +139,10 @@
           { label: "やめる" },
           { label: "リセット", primary: true, action: function () {
             const sound = progress.sound;
+            const talk = progress.talk;
             progress = fallbackProgress();
             progress.sound = sound;
+            progress.talk = talk;
             saveProgress();
             renderStageGrid();
           } }
@@ -233,6 +239,289 @@
     els.soundButton.setAttribute("aria-pressed", String(Sfx.isEnabled()));
   }
 
+  // --- Talk scenes (visual-novel style briefings and evaluations) ---
+  let talkState = null;
+
+  function talkEnabled() {
+    return progress.talk !== false && Boolean(window.Story) && Boolean(els.talkScreen && els.talkText && els.talkNext);
+  }
+
+  function updateTalkToggle() {
+    if (!els.talkToggleButton) return;
+    els.talkToggleButton.textContent = progress.talk !== false ? "会話 ON" : "会話 OFF";
+    els.talkToggleButton.setAttribute("aria-pressed", String(progress.talk !== false));
+  }
+
+  function initTalk() {
+    updateTalkToggle();
+    if (els.talkToggleButton) {
+      els.talkToggleButton.addEventListener("click", function () {
+        progress.talk = progress.talk === false;
+        saveProgress();
+        updateTalkToggle();
+        Sfx.play("button");
+      });
+    }
+    if (els.talkScreen) {
+      [els.talkNext, els.talkText, els.talkStage].forEach(function (element) {
+        if (element) element.addEventListener("click", advanceTalk);
+      });
+      if (els.talkSkip) els.talkSkip.addEventListener("click", function () { Sfx.play("button"); endTalk(); });
+    }
+    if (els.ceremonyScreen) {
+      [els.ceremonyNext, els.ceremonyCard].forEach(function (element) {
+        if (element) element.addEventListener("click", function (event) {
+          if (event && event.stopPropagation && element === els.ceremonyNext) event.stopPropagation();
+          advanceCeremony();
+        });
+      });
+    }
+    if (typeof document.addEventListener === "function") {
+      document.addEventListener("keydown", function (event) {
+        if (talkState && event.key === "Escape") endTalk();
+        else if (ceremonyState && event.key === "Escape") endCeremony();
+      });
+    }
+  }
+
+  function figureElement(speaker) {
+    const figure = document.createElement("figure");
+    figure.className = "talk-figure";
+    figure.setAttribute("data-speaker", speaker);
+    const image = document.createElement("img");
+    image.alt = "";
+    figure.appendChild(image);
+    figure.image = image;
+    return figure;
+  }
+
+  function setFigure(figure, speaker, face) {
+    const src = Story.portrait(speaker, face);
+    if (src && figure.image && figure.image.src !== src) figure.image.src = src;
+    const person = Story.CHARACTERS[speaker];
+    if (figure.image) figure.image.alt = person ? person.name + "（架空の人物のイラスト）" : "";
+  }
+
+  function showTalk(lines, options, onDone) {
+    lines = (lines || []).filter(Boolean);
+    if (!lines.length || !talkEnabled()) {
+      if (onDone) onDone();
+      return;
+    }
+    const cast = [];
+    lines.forEach(function (entry) { if (cast.indexOf(entry.speaker) < 0 && cast.length < 3) cast.push(entry.speaker); });
+    talkState = { lines, index: 0, onDone, timer: null, full: "", figures: {} };
+    if (els.talkStage) {
+      els.talkStage.innerHTML = "";
+      els.talkStage.setAttribute("data-cast", String(cast.length));
+      cast.forEach(function (speaker, slot) {
+        const figure = figureElement(speaker);
+        figure.classList.add("slot-" + slot);
+        const first = lines.find(function (entry) { return entry.speaker === speaker; });
+        setFigure(figure, speaker, first.face);
+        els.talkStage.appendChild(figure);
+        talkState.figures[speaker] = figure;
+      });
+    }
+    if (els.talkKicker) els.talkKicker.textContent = (options && options.kicker) || "TALK";
+    els.talkScreen.classList.add("is-open");
+    els.talkScreen.setAttribute("aria-hidden", "false");
+    renderTalkLine();
+    if (typeof els.talkNext.focus === "function") els.talkNext.focus();
+  }
+
+  function renderTalkLine() {
+    const entry = talkState.lines[talkState.index];
+    const person = Story.CHARACTERS[entry.speaker] || { name: "", role: "" };
+    const last = talkState.index === talkState.lines.length - 1;
+    if (els.talkName) els.talkName.textContent = person.name;
+    if (els.talkRole) els.talkRole.textContent = person.role;
+    if (els.talkCount) els.talkCount.textContent = (talkState.index + 1) + " / " + talkState.lines.length;
+    Object.keys(talkState.figures).forEach(function (speaker) {
+      const figure = talkState.figures[speaker];
+      const speaking = speaker === entry.speaker;
+      figure.classList.toggle("is-speaking", speaking);
+      if (speaking) {
+        setFigure(figure, speaker, entry.face);
+        // Restart the small hop that marks who is talking.
+        figure.classList.remove("is-hop");
+        void figure.offsetWidth;
+        figure.classList.add("is-hop");
+      }
+    });
+    els.talkNext.textContent = last ? "閉じる" : "次へ ▶";
+    typeTalkText(entry.text);
+  }
+
+  function reducedMotion() {
+    return Boolean(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }
+
+  function typeTalkText(text) {
+    clearInterval(talkState.timer);
+    talkState.full = text;
+    if (reducedMotion()) {
+      els.talkText.textContent = text;
+      talkState.timer = null;
+      return;
+    }
+    let shown = 0;
+    els.talkText.textContent = "";
+    talkState.timer = setInterval(function () {
+      shown += 2;
+      els.talkText.textContent = text.slice(0, shown);
+      if (shown >= text.length) {
+        clearInterval(talkState.timer);
+        talkState.timer = null;
+      }
+    }, 28);
+  }
+
+  function advanceTalk() {
+    if (!talkState) return;
+    if (talkState.timer) {
+      // First tap finishes the line; the next tap moves on.
+      clearInterval(talkState.timer);
+      talkState.timer = null;
+      els.talkText.textContent = talkState.full;
+      return;
+    }
+    Sfx.play("pick");
+    talkState.index += 1;
+    if (talkState.index >= talkState.lines.length) endTalk();
+    else renderTalkLine();
+  }
+
+  function endTalk() {
+    if (!talkState) return;
+    clearInterval(talkState.timer);
+    const done = talkState.onDone;
+    talkState = null;
+    els.talkScreen.classList.remove("is-open");
+    els.talkScreen.setAttribute("aria-hidden", "true");
+    if (done) done();
+  }
+
+  // --- Promotion ceremony: review sheet, stamp, confetti and congratulations ---
+  let ceremonyState = null;
+
+  function gradeCells(sheet) {
+    return sheet.rows.map(function (row, index) {
+      return "<div class=\"review-row\" style=\"--delay:" + (index * .38 + .25) + "s\"><span>" + row.label + "</span><small>" + row.note +
+        "</small><b class=\"grade grade-" + row.grade + "\">" + row.grade + "</b></div>";
+    }).join("") +
+      "<div class=\"review-row review-total\" style=\"--delay:" + (sheet.rows.length * .38 + .35) + "s\"><span>総合評価</span><small>現場責任者・統括部長の評価</small><b class=\"grade grade-" + sheet.total + "\">" + sheet.total + "</b></div>";
+  }
+
+  function showCeremony(stage, result, promotion, onDone) {
+    if (!els.ceremonyScreen || !window.Story) {
+      if (onDone) onDone();
+      return;
+    }
+    const sheet = Story.gradeSheet(stage, result);
+    ceremonyState = { onDone, lines: Story.ceremony(promotion), index: -1, stamped: false, timers: [] };
+    els.ceremonyScreen.classList.remove("is-stamped");
+    if (els.ceremonySheet) els.ceremonySheet.innerHTML = gradeCells(sheet);
+    if (els.ceremonyTitle) els.ceremonyTitle.innerHTML = "<small>" + promotion.from.title + "</small><i>→</i><strong>" + promotion.to.title + "</strong>";
+    if (els.ceremonyCast) {
+      els.ceremonyCast.innerHTML = "";
+      ["senpai", "president", "doki"].forEach(function (speaker) {
+        const figure = figureElement(speaker);
+        setFigure(figure, speaker, "cheer");
+        els.ceremonyCast.appendChild(figure);
+      });
+    }
+    if (els.ceremonyLine) els.ceremonyLine.textContent = "";
+    if (els.ceremonyNext) els.ceremonyNext.textContent = "次へ ▶";
+    els.ceremonyScreen.classList.add("is-open");
+    els.ceremonyScreen.setAttribute("aria-hidden", "false");
+    Sfx.play("review");
+    const delay = reducedMotion() ? 0 : (sheet.rows.length * .38 + 1.1) * 1000;
+    if (delay) ceremonyState.timers.push(setTimeout(stampCeremony, delay));
+    else stampCeremony();
+  }
+
+  function stampCeremony() {
+    if (!ceremonyState || ceremonyState.stamped) return;
+    ceremonyState.stamped = true;
+    els.ceremonyScreen.classList.add("is-stamped");
+    Sfx.play("stamp");
+    Sfx.play("promote");
+    launchConfetti();
+    advanceCeremony();
+  }
+
+  function advanceCeremony() {
+    if (!ceremonyState) return;
+    if (!ceremonyState.stamped) { stampCeremony(); return; }
+    ceremonyState.index += 1;
+    const entry = ceremonyState.lines[ceremonyState.index];
+    if (!entry) { endCeremony(); return; }
+    const person = Story.CHARACTERS[entry.speaker];
+    if (els.ceremonyLine) els.ceremonyLine.innerHTML = "<b>" + person.name + "</b>「" + entry.text + "」";
+    if (els.ceremonyCast && els.ceremonyCast.children) {
+      Array.from(els.ceremonyCast.children).forEach(function (figure) {
+        figure.classList.toggle("is-speaking", figure.getAttribute("data-speaker") === entry.speaker);
+      });
+    }
+    if (els.ceremonyNext) els.ceremonyNext.textContent = ceremonyState.index === ceremonyState.lines.length - 1 ? "辞令を受け取る" : "次へ ▶";
+  }
+
+  function endCeremony() {
+    if (!ceremonyState) return;
+    const done = ceremonyState.onDone;
+    ceremonyState.timers.forEach(clearTimeout);
+    ceremonyState = null;
+    els.ceremonyScreen.classList.remove("is-open");
+    els.ceremonyScreen.setAttribute("aria-hidden", "true");
+    if (els.careerBadge && els.careerBadge.classList) {
+      els.careerBadge.classList.add("is-promoted");
+      setTimeout(function () { els.careerBadge.classList.remove("is-promoted"); }, 4000);
+    }
+    if (done) done();
+  }
+
+  function launchConfetti() {
+    const canvas = els.confettiCanvas;
+    if (!canvas || !canvas.getContext || reducedMotion() || typeof requestAnimationFrame !== "function") return;
+    const ctx = canvas.getContext("2d");
+    const width = canvas.width = window.innerWidth || 1280;
+    const height = canvas.height = window.innerHeight || 720;
+    const colors = ["#25d391", "#4aa8ff", "#ffbd59", "#ff715b", "#eef8f5"];
+    const bits = Array.from({ length: 150 }, function () {
+      return { x: width / 2 + (Math.random() - .5) * 200, y: height * .35, vx: (Math.random() - .5) * 14, vy: -Math.random() * 13 - 4,
+        size: 5 + Math.random() * 7, spin: Math.random() * 6, color: colors[Math.floor(Math.random() * colors.length)] };
+    });
+    const start = performance.now();
+    function frame(now) {
+      const t = (now - start) / 1000;
+      ctx.clearRect(0, 0, width, height);
+      bits.forEach(function (bit) {
+        bit.vy += .32; bit.vx *= .992; bit.x += bit.vx; bit.y += bit.vy;
+        ctx.save(); ctx.translate(bit.x, bit.y); ctx.rotate(bit.spin * t);
+        ctx.fillStyle = bit.color; ctx.globalAlpha = Math.max(0, 1 - t / 4);
+        ctx.fillRect(-bit.size / 2, -bit.size / 4, bit.size, bit.size / 2); ctx.restore();
+      });
+      if (t < 4) requestAnimationFrame(frame);
+      else ctx.clearRect(0, 0, width, height);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  // Starts a fixed mission id or a stage definition, with the pre-run briefing unless told otherwise.
+  function startMission(stageOrId, options) {
+    const stage = stageOrId && typeof stageOrId === "object"
+      ? stageOrId
+      : StageData.stages.find(function (item) { return item.id === stageOrId; });
+    if (!stage) return;
+    function go() {
+      hideStart();
+      if (window.game) window.game.startStage(stageOrId);
+    }
+    if (options && options.briefing === false) { go(); return; }
+    showTalk(window.Story ? Story.briefing(stage) : [], { kicker: "BRIEFING / " + missionLabel(stage) }, go);
+  }
+
   function renderCareer() {
     const level = careerLevel();
     const steps = StageData.CAREER;
@@ -307,8 +596,7 @@
       if (unlocked) {
         card.addEventListener("click", function () {
           Sfx.play("button");
-          hideStart();
-          if (window.game) window.game.startStage(stage.id);
+          startMission(stage.id);
         });
       }
       els.stageGrid.appendChild(card);
@@ -335,13 +623,22 @@
     if (els.homeScreen) els.homeScreen.classList.remove("is-open");
   }
 
-  function dialogue(text, speaker) {
+  function dialogue(text, speaker, face) {
+    const person = window.Story && Story.CHARACTERS[speaker];
     const boss = speaker === "boss";
-    els.speakerAvatar.textContent = boss ? "責" : "叉";
-    els.speakerAvatar.style.background = boss ? "#4aa8ff" : "#24d391";
-    els.speakerName.textContent = boss ? "現場責任者" : "積載ナビ";
+    const art = person && Story.portrait ? Story.portrait(speaker, face) : null;
+    els.speakerAvatar.textContent = art ? "" : person ? person.initial : boss ? "責" : "叉";
+    els.speakerAvatar.style.background = person ? person.color : boss ? "#4aa8ff" : "#24d391";
+    els.speakerAvatar.style.backgroundImage = art ? "url(\"" + art + "\")" : "";
+    els.speakerAvatar.classList.toggle("has-art", Boolean(art));
+    els.speakerName.textContent = person ? person.name + "（" + person.role + "）" : boss ? "現場責任者" : "積載ナビ";
     els.dialogueText.textContent = text;
     els.dialoguePanel.classList.remove("is-hidden");
+  }
+
+  // Shows one Story line ({ speaker, text }) in the in-game navigation panel.
+  function say(line) {
+    if (line) dialogue(line.text, line.speaker, line.face);
   }
 
   function hideDialogue() { els.dialoguePanel.classList.add("is-hidden"); }
@@ -499,7 +796,6 @@
 
   function showResult(stage, result, handlers) {
     const promotion = recordResult(stage, result);
-    if (promotion) Sfx.play("promote");
     if (result.passed && window.CommunityRevenue && !stage.dispatch) {
       if (!result.communityCompletionId) {
         result.communityCompletionId = "delivery-" + stage.id + "-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 14);
@@ -525,11 +821,32 @@
       { label: "もう一度", action: handlers.retry }
     ];
     if (result.passed && stage.id < StageData.stages.length) actions.push({ label: "次の研修へ", primary: true, action: handlers.next });
+    // The evaluation talk plays first; the report (and any appointment) follows when it closes.
+    const evaluation = window.Story ? Story.evaluation(stage, result, { promotion }) : [];
+    const report = function () { openReport(stage, result, handlers, promotion, rows, notes, actions); };
+    showTalk(evaluation, { kicker: "EVALUATION / " + missionLabel(stage) }, function () {
+      if (promotion) showCeremony(stage, result, promotion, report);
+      else report();
+    });
+  }
+
+  function reviewHtml(stage, result) {
+    if (!window.Story) return "";
+    const sheet = Story.gradeSheet(stage, result);
+    return "<div class=\"report-review\" aria-label=\"評価シート\">" + sheet.rows.map(function (row) {
+      return "<span><small>" + row.label + "</small><b class=\"grade grade-" + row.grade + "\">" + row.grade + "</b></span>";
+    }).join("") + "<span class=\"is-total\"><small>総合</small><b class=\"grade grade-" + sheet.total + "\">" + sheet.total + "</b></span></div>";
+  }
+
+  function openReport(stage, result, handlers, promotion, rows, notes, actions) {
+    // Without the ceremony (no story data), the promotion jingle plays here.
+    if (promotion && !(window.Story && els.ceremonyScreen)) Sfx.play("promote");
     openModal({
       kicker: "DELIVERY REPORT / " + missionLabel(stage),
       title: result.passed ? (stage.dispatch ? "配車便クリア" : "研修クリア") : "目標未達・再点検",
       body:
         (promotion ? promotionHtml(promotion) : "") +
+        reviewHtml(stage, result) +
         "<div class=\"score-hero\"><span class=\"score-rank\">" + result.rank.key + "</span><span><b class=\"score-points\">" + result.score + "</b><br><small class=\"score-label\">SAFETY SCORE / 100</small></span></div>" +
         "<p class=\"" + (result.passed ? "result-pass" : "result-fail") + "\">" +
         (result.passed ? "✓ 安全売上 " + Scoring.yen(result.netRevenue) : "✕ 安全売上 " + Scoring.yen(result.netRevenue) + " / 目標 " + Scoring.yen(stage.targetRevenue)) + "</p>" +
@@ -570,7 +887,8 @@
       (warnings.length ? "<ul class=\"dispatch-warnings\">" + warnings.map(function (w) { return "<li>" + w + "</li>"; }).join("") + "</ul>" : "");
   }
 
-  function showDispatchBoard(board, preselectedIds) {
+  function showDispatchBoard(board, preselectedIds, options) {
+    const briefing = !(options && options.briefing === false);
     const selected = new Set(preselectedIds || []);
     const m = board.materials;
     const rows = board.orders.map(function (pkg) {
@@ -598,8 +916,7 @@
         { label: "別の依頼に替える", action: function () { showDispatchBoard(StageData.createDispatchBoard(newDispatchSeed())); } },
         { label: "受注して倉庫へ", primary: true, action: function () {
           const ids = Array.from(selected);
-          hideStart();
-          if (window.game) window.game.startStage(StageData.createDispatchStage(board, ids));
+          startMission(StageData.createDispatchStage(board, ids), { briefing });
         } }
       ]
     });
@@ -638,6 +955,10 @@
     closeModal,
     renderStageGrid,
     showDispatchBoard,
+    startMission,
+    showTalk,
+    showCeremony,
+    say,
     careerLevel,
     getProgress: function () { return progress; },
     getCampaignEarnings: campaignEarnings

@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#062733">
   <meta name="description" content="翠路ロジスティクス株式会社の架空コーポレートサイト。物流の仕事と、パレット荷役・積付け・固縛を学ぶ安全研修ゲームを体験できます。">
   <title>翠路ロジスティクス株式会社｜荷物の先の、暮らしまで運ぶ。</title>
-  <link rel="stylesheet" href="css/style.css?v=20261001a2">
+  <link rel="stylesheet" href="css/style.css?v=20261001c1">
 </head>
 <body>
   <section id="homeScreen" class="home-screen is-open" aria-label="ゲームホームページ">
@@ -196,7 +196,7 @@
             <li><b>1</b><div><strong>すくう</strong><p>段積みは上から、前後配置は手前から。爪を穴へ75%以上差し込み、奥への突き出しに注意します。</p></div></li>
           <li><b>2</b><div><strong>運ぶ</strong><p>持ち上げた荷を低い位置に保ち、出荷バースまで後退搬送します。</p></div></li>
           <li><b>3</b><div><strong>積む・固定する</strong><p>トラック側面図へ配置し、重量・重心・配送順と固定を整えます。</p></div></li>
-            <li><b>4</b><div><strong>運転して届ける</strong><p>10パターンの夜間配送。通常80km/h、アクセルで最大120km/h、離せば緩やかに減速。左右で工事・障害物を回避。接触・急ブレーキによる荷傷みは−5点。パトカー追越時・追越後5秒は90km/h以上で−3点。配送目安150秒。数値はゲーム専用です。</p></div></li>
+            <li><b>4</b><div><strong>運転して届ける</strong><p>毎回コースが変わる3車線の夜間高速。最高90km/h。工事の車線規制・落下物・故障車・渋滞・合流・トンネルを、制限速度と車間距離を守って抜け、出口まで届けます。追い越しでコンボ、急な操作は荷揺れ。数値はゲーム専用です。</p></div></li>
         </ol>
       </section>
 
@@ -326,7 +326,7 @@
       </div>
 
       <div id="mobileNavDock" class="mobile-nav-dock"></div>
-      <aside class="road-mobile-status" aria-label="配送状況"><strong id="roadTelemetry">通常80 ／ アクセルで最大120km/h</strong><p id="roadAlert">アクセルを離して緩やかに減速。左右で工事・障害物を回避。高速からの急ブレーキは荷傷みの危険。</p></aside>
+      <aside class="road-mobile-status" aria-label="配送状況"><strong id="roadTelemetry">最高90km/h ／ 3車線</strong><p id="roadAlert">アクセルで加速、離すとその速度で巡航。制限速度の標識と車間距離に注意。</p></aside>
       <section id="roadControls" class="road-controls" aria-label="高速道路の運転操作" hidden>
         <button id="roadPauseButton" class="road-pause" type="button" aria-pressed="false" hidden>Ⅱ 一時停止</button>
         <button data-road="gas" class="road-gas" type="button" aria-label="上：加速">▲ 加速</button>
@@ -371,7 +371,7 @@
       </nav>
     </section>
 
-    <p class="quick-tip"><span>3段階の研修</span> ①倉庫：上段・手前から取り出し、左へ搬送　②荷台：積む → 固定 → 点検　③配送：通常80・↑アクセルで120・離して減速・↓またはスペースでブレーキ・←→で回避。スマホは画面下の操作パッドを使用。<span class="game-copyright-notice">本作品の画像・文章・ゲームデータの無断転載・無断配布を禁止します。</span></p>
+    <p class="quick-tip"><span>3段階の研修</span> ①倉庫：上段・手前から取り出し、左へ搬送　②荷台：積む → 固定 → 点検　③配送：↑/Wで加速（最高90）・離すと巡航・↓/S/スペースで減速・←→/A Dで車線変更。スマホは画面下の操作パッドを使用。<span class="game-copyright-notice">本作品の画像・文章・ゲームデータの無断転載・無断配布を禁止します。</span></p>
   </main>
 
   <section id="startScreen" class="screen-overlay" aria-label="ステージ選択">
@@ -386,6 +386,7 @@
       <div class="start-footer">
         <button id="homeBackButton" type="button">← ホームへ戻る</button>
         <span>NO DOWNLOAD / NO LOGIN</span>
+        <button id="talkToggleButton" type="button" aria-pressed="true">会話 ON</button>
         <button id="resetProgressButton" type="button">記録をリセット</button>
       </div>
     </div>
@@ -401,14 +402,46 @@
     </div>
   </section>
 
+  <section id="talkScreen" class="talk-screen" aria-hidden="true" role="dialog" aria-modal="true" aria-label="会話">
+    <div id="talkStage" class="talk-stage" aria-hidden="true"></div>
+    <div class="talk-box">
+      <p id="talkKicker" class="eyebrow">TALK</p>
+      <p class="talk-speaker"><strong id="talkName"></strong><small id="talkRole"></small><span id="talkCount"></span></p>
+      <p id="talkText" class="talk-text" aria-live="polite"></p>
+      <div class="talk-actions">
+        <button id="talkSkip" type="button">スキップ</button>
+        <button id="talkNext" class="primary" type="button">次へ ▶</button>
+      </div>
+      <small class="talk-note">登場する人物・会社はすべて架空です。イラストはイメージです。</small>
+    </div>
+  </section>
+
+  <section id="ceremonyScreen" class="ceremony-screen" aria-hidden="true" role="dialog" aria-modal="true" aria-label="昇格">
+    <canvas id="confettiCanvas" class="confetti-canvas" aria-hidden="true"></canvas>
+    <div id="ceremonyCard" class="ceremony-card">
+      <p class="eyebrow">PERSONNEL REVIEW / 人事評価</p>
+      <div id="ceremonySheet" class="ceremony-sheet"></div>
+      <div class="ceremony-stamp" aria-hidden="true">昇格</div>
+      <div class="ceremony-reveal">
+        <div id="ceremonyTitle" class="ceremony-title"></div>
+        <div id="ceremonyCast" class="ceremony-cast" aria-hidden="true"></div>
+        <p id="ceremonyLine" class="ceremony-line" aria-live="polite"></p>
+        <button id="ceremonyNext" class="primary" type="button">次へ ▶</button>
+      </div>
+    </div>
+  </section>
+
   <script src="js/stages.js" defer></script>
   <script src="js/collision.js" defer></script>
   <script src="js/scoring.js" defer></script>
+  <script src="js/portraits.js" defer></script>
+  <script src="js/story.js" defer></script>
   <script src="js/audio.js" defer></script>
   <script src="js/community.js" defer></script>
   <script src="js/ui.js" defer></script>
   <script src="js/game.js" defer></script>
   <script src="js/transport.js" defer></script>
+  <script src="js/drive.js" defer></script>
   <script src="js/input.js" defer></script>
   <script src="js/main.js" defer></script>
 </body>

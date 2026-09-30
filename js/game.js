@@ -423,7 +423,9 @@
       this.stopVirtualPad();
       this.releaseForklift();
       Sfx.play("place");
-      UI.toast(pkg.name + "を出荷バースへ運びました。");
+      const cheer = this.transportSequence === 1 && window.Story ? Story.cheer("firstTransport") : null;
+      const person = cheer && Story.CHARACTERS[cheer.speaker];
+      UI.toast(pkg.name + "を出荷バースへ運びました。" + (person ? "　" + person.name.split(" ")[0] + "「" + cheer.text + "」" : ""));
       const next = this.packages.find(function (item) { return !item.transported && !item.forkDamaged; });
       if (next) {
         this.selectPickupCargo(next);
@@ -812,7 +814,8 @@
       UI.showInspection(this.stage, report);
       if (this.inspected) {
         Sfx.play("clear");
-        UI.dialogue("重量・重心・固定、全部確認できました。出発できます！", "rookie");
+        if (window.Story && UI.say) UI.say(Story.cheer("inspectionPassed"));
+        else UI.dialogue("重量・重心・固定、全部確認できました。出発できます！", "rookie");
       } else {
         Sfx.play("error");
         UI.dialogue("赤い項目を直して、もう一度点検しましょう。", "rookie");
@@ -896,8 +899,13 @@
       const source = this.stageSource;
       UI.showResult(this.stage, this.driveResult, {
         // A dispatch retry reopens the same order board so the player can rethink what to accept.
-        retry: () => (source && source.dispatch ? UI.showDispatchBoard(source.board, source.acceptedIds) : this.startStage(id)),
-        next: () => this.startStage(Math.min(StageData.stages.length, id + 1)),
+        retry: () => (source && source.dispatch ? UI.showDispatchBoard(source.board, source.acceptedIds, { briefing: false }) : this.startStage(id)),
+        // A new mission opens with its briefing; retries skip it.
+        next: () => {
+          const nextId = Math.min(StageData.stages.length, id + 1);
+          if (UI.startMission) UI.startMission(nextId);
+          else this.startStage(nextId);
+        },
         stages: () => { this.mode = "menu"; UI.showStart(); }
       });
       this.updateControls();

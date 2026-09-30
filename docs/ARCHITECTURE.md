@@ -33,19 +33,22 @@ UnityのScene、Prefab、C#スクリプトは存在しない。相当する構�
 1. `js/stages.js` → `window.StageData`
 2. `js/collision.js` → `window.Collision`
 3. `js/scoring.js` → `window.Scoring`
-4. `js/audio.js` → `window.Sfx`
-5. `js/community.js` → `window.CommunityRevenue`
-6. `js/ui.js` → `window.UI`
-7. `js/game.js` → `window.Game`
-8. `js/transport.js` → `Game.prototype`を倉庫・配送向けに拡張/上書き
-9. `js/input.js` → `window.GameInput`
-10. `js/main.js` → DOM初期化、ゲーム生成、入力とボタンの接続、表示サイズ調整
+4. `js/portraits.js` → `window.Portraits`（立ち絵SVG）
+5. `js/story.js` → `window.Story`（登場人物、ブリーフィング、評価、評価シート、同僚の声かけ）
+6. `js/audio.js` → `window.Sfx`
+7. `js/community.js` → `window.CommunityRevenue`
+8. `js/ui.js` → `window.UI`
+9. `js/game.js` → `window.Game`
+10. `js/transport.js` → `Game.prototype`を倉庫荷役向けに拡張/上書き
+11. `js/drive.js` → `Game.prototype`の夜間配送（開始・操作・交通・判定・描画）を定義、`window.DriveConfig`
+12. `js/input.js` → `window.GameInput`
+13. `js/main.js` → DOM初期化、ゲーム生成、入力とボタンの接続、表示サイズ調整
 
 読込順は依存関係そのものなので、順序変更時は全体への影響を確認する。
 
 ## 4. 主要フォルダ
 
-- `assets/images/` — ホーム用人物・作業画像、倉庫背景、フォークリフト、トラック、道路、一般車、パトカーのPNG。
+- `assets/images/` — 会話の立ち絵を生成画像へ差し替える場合もここへ置く。ホーム用人物・作業画像、倉庫背景、フォークリフト、トラック、道路、一般車、パトカーのPNG。
 - `css/` — `style.css`のみ。企業ホーム、ゲーム、PC/モバイル、仮想パッドを一括管理。
 - `js/` — ゲームデータ、描画、入力、判定、採点、UI、音、通信。
 - `data/` — Nodeサーバー用の共有安全売上JSON台帳。
@@ -76,7 +79,7 @@ UnityのScene、Prefab、C#スクリプトは存在しない。相当する構�
 
 - `Game.prototype`を後付けで拡張する。既存メソッドをラップまたは上書きする箇所がある。
 - 段積み、前後配置、手動パレット差込、転倒・奥貨物破損を担当。
-- 夜間配送10パターン、車速、交通、工事・障害物、衝突、パトカー、追越、左側通行、一時停止、道路描画を担当。
+- 夜間配送は`js/drive.js`へ移した。
 - `js/game.js`と同名メソッドがある場合、後から読み込まれる本ファイル側が最終挙動になる。
 
 ### `js/collision.js`
@@ -90,6 +93,26 @@ UnityのScene、Prefab、C#スクリプトは存在しない。相当する構�
 - 資材費、破損損失、遅延損失、安全点、ランク、安全売上、基本合否を計算。
 - 便定義に`leftoverPenaltyRate`がある場合だけ、未積載（爪突き破損を除く）の荷物に積み残し違約金を計上する。
 
+### `js/drive.js`
+
+- `game.js`の`beginDrive`をラップし、seed付きのコース（`buildRoute`）、交通（`spawnTraffic`、`updateTraffic`）、操作（`roadControl`、`handleControlKey`、`toggleRoadPause`）、判定（接触、割り込み、制限区間、パトカー、荷揺れ、追い越しコンボ、車間、出口）、到着処理（`arriveDrive`で安全点・遅延・`result.drive`・`result.loadScore`を反映して`finishDrive`）、描画（`drawDriving`、HUD）を担当する。
+- 交通の乱数は`road.random`（コースのseedから生成）を使うため、同じseedなら同じ流れになる。コース生成は`buildRoute(seed)`。
+- 距離は`DriveConfig.tempo`（2.2倍）で時間を圧縮し、`pxPerM`（3.6）で画面へ投影する。車の大きさは画像の大きさから距離に換算する。
+- `update`と`updateControls`もラップし、配送中の更新と配送用ボタンの表示を扱う。倉庫の破損演出の経過時間もここで進める。
+
+### `js/portraits.js`
+
+- 6人の立ち絵を共通パーツ（体・服・髪・目・眉・口・眼鏡・ヘルメット）から組み立てるSVG生成器。表情は通常・笑顔・真剣・驚き・大喜び・心配。
+- `Portraits.url(key, face, art)`は、`art[face]`に画像パスがあればそれを、なければSVGのデータURLを返す。
+
+### `js/story.js`
+
+- 架空の登場人物（代表取締役、統括部長・所長3名、先輩乗務員、同期）の名前・役職・色と、差し替え用の画像パス（`art`）を定義する。立ち絵は`js/portraits.js`が描く。
+- `briefing(stage)`で出発前の会話、`evaluation(stage, result, { promotion })`で結果に応じた評価会話、`cheer(event)`で作業中の同僚の声かけを返す。
+- 評価は合否・ランク、爪突き事故、積み残し、道路接触、荷傷み、速度超過、出口通過、支持不足、配送順、遅延の順に最も重要な1点を指摘する。
+- `gradeSheet(stage, result)`で荷役・積付け・運転・収益と総合の評価を返し、`ceremony(promotion)`で昇格セレモニーのセリフを返す。`portrait(key, face)`で立ち絵のURLを返す。
+- `js/story.js`がない環境（既存テスト）では、UIとゲームは会話なしで動作する。
+
 ### `js/ui.js`
 
 - ホーム、ミッション一覧、ヘルプ、点検、結果モーダルを管理。
@@ -97,6 +120,7 @@ UnityのScene、Prefab、C#スクリプトは存在しない。相当する構�
 - 3枚のホームカルーセルとWeb/モバイル表示モードを制御。
 - 役職をクリア記録から算出し、ヘッダー・昇進ルート・昇進時の辞令を表示する。
 - 配車便カード、依頼ボード（受注選択と集計）、配車便専用記録（`progress.dispatch`）を管理する。
+- 会話シーン（立ち絵の配置と話し手の強調、文字送り、次へ、スキップ、Esc、会話ON/OFF）を管理し、`startMission`で出発前のブリーフィングを、`showResult`で評価会話→（昇格時は昇格セレモニー）→結果モーダルの順に表示する。昇格セレモニーは`#ceremonyScreen`、紙吹雪は`#confettiCanvas`。
 
 ### `js/input.js` / `js/main.js`
 
@@ -174,4 +198,7 @@ UnityのScene、Prefab、C#スクリプトは存在しない。相当する構�
 - レスポンシブ表示はDOM操作パネルの高さを引いてCanvas全体を16:9で縮小する。Canvas内部座標は変更しない。
 - `homepage-smoke-test.js`は企業名、架空免責、募集停止文言、3画像、Web/スマホ導線を契約として検査する。
 - `dispatch-career-test.js`は依頼ボード生成、積み残し違約金、配車便の荷役・再開、役職昇進、配車便記録の分離を検査する。
+- `story-talk-test.js`は立ち絵と表情、ブリーフィング・評価の内容、評価シート、昇格セレモニー、会話シーンの進行・スキップ・ON/OFF、評価後の結果表示、作業中の声かけを検査する。
+- 配送のテストは`transport-test.js`（操作・判定・到着）、`road-pattern-test.js`（12コースの完走と交通の流れ）、`road-yield-test.js`（交通の挙動）、`pickup-motion-test.js`（速度とスクロールの比例）、`keyboard-pause-test.js`（キー操作と一時停止）。`transport-test.js`は`js/drive.js`も読み込む。
+- 会話シーン（`#talkScreen`）はモーダルより上に重なる。ブリーフィング中はゲーム開始前、評価中は結果確定後なので、制限時間は進まない。
 - `transport.js`の倉庫判定は先頭4個の荷物を段積み・前後配置に使う。配車便では荷物が4個未満の場合があるため、存在しない枠は処理済みとして扱う。
