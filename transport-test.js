@@ -60,6 +60,14 @@ g.roadControl("right", true); assert.strictEqual(g.road.lane, 1);
 g.roadControl("right", true); g.roadControl("right", true); assert.strictEqual(g.road.lane, 2, "Lane changes clamp at the right lane");
 for (let n = 0; n < 20; n++) g.update(.05);
 assert(Math.abs(g.road.x - D.laneX[2]) < 3);
+// Lane changes turn nose-first: the steering angle points toward the new lane, then straightens.
+g = quiet(drive(22)); g.roadControl("right", true);
+for (let n = 0; n < 6; n++) g.update(1 / 60);
+assert(g.road.steer > .03, "Moving right turns the nose right");
+for (let n = 0; n < 120; n++) g.update(1 / 60);
+assert(Math.abs(g.road.steer) < .01, "The truck straightens once in the lane");
+g.roadControl("left", true); for (let n = 0; n < 6; n++) g.update(1 / 60);
+assert(g.road.steer < -.03, "Moving left turns the nose left");
 // Quick steering at speed shakes the cargo; loose loads shake more.
 g = quiet(drive(12)); g.road.speed = 90; g.road.sway = 0; g.roadControl("right", true);
 const calmSway = g.road.sway;

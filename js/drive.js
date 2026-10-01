@@ -372,6 +372,9 @@
     r.distance += r.speed / 3.6 * travel;
     const moved = r.distance - previous;
     r.x += (DRIVE.laneX[r.lane] - r.x) * Math.min(1, dt * 7);
+    // Steering angle eases in like turning a wheel: nose toward the target lane, straight again on arrival.
+    const steerTarget = clamp((DRIVE.laneX[r.lane] - r.x) * .0028, -.16, .16);
+    r.steer = (r.steer || 0) + (steerTarget - (r.steer || 0)) * Math.min(1, dt * 12);
     this.spawnTraffic(dt);
     this.updateTraffic(dt, travel);
     r.points += (r.speed / DRIVE.maxSpeed) * moved * .5;
@@ -637,6 +640,10 @@
       const top = y - h / 2;
       if (top > 740 || top + h < -60) continue;
       const img = car.kind === "patrol" ? i.patrol : car.kind === "truck" ? i.truck : i.car;
+      // Lane changes lean the nose first, pivoting near the rear axle.
+      const laneDir = car.laneTo - car.laneFrom;
+      const lean = car.laneT < 1 && car.signal <= 0 ? Math.sign(laneDir || 1) * Math.sin(Math.PI * car.laneT) * .14 : 0;
+      c.save(); this.steerAround(c, car.x, top + h * .82, lean);
       if (car.kind === "truck") {
         c.save(); c.globalAlpha = .92; sprite(c, img, car.x - car.w / 2, top, car.w, h, "#8aa0b5"); c.restore();
         // Other trucks get a different cab and body color so they never read as the player's green truck.
@@ -647,12 +654,13 @@
       const signal = car.laneT < 1 || car.signal > 0 ? Math.sign(car.laneTo - car.laneFrom) || -1 : 0;
       this.drawVehicleLights(c, car.x, top, car.w, h, { braking: car.braking, signal, hazard: car.speed < 40 && !car.ramp });
       if (car.kind === "patrol") { c.fillStyle = Math.floor(r.seconds * 5) % 2 ? "#ff3846" : "#4a7bff"; c.fillRect(car.x - 14, top + h * .45, 28, 6); }
+      c.restore();
     }
     // Player truck.
     const ph = SIZE.player.len * px;
     const pTop = DRIVE.playerY - ph / 2;
-    const tilt = (DRIVE.laneX[r.lane] - r.x) * -.0022;
-    c.save(); c.translate(r.x, DRIVE.playerY); c.rotate(tilt); c.translate(-r.x, -DRIVE.playerY);
+    // The truck turns nose-first toward the target lane, pivoting near its rear axle, and straightens as it arrives.
+    c.save(); this.steerAround(c, r.x, pTop + ph * .82, r.steer || 0);
     sprite(c, i.truck, r.x - SIZE.player.w / 2, pTop, SIZE.player.w, ph, "#25b779");
     this.drawVehicleLights(c, r.x, pTop, SIZE.player.w, ph, { braking: r.brake, signal: r.blink > 0 ? r.blinkDir : 0 });
     c.restore();
@@ -672,6 +680,11 @@
     }
     c.restore();
     this.drawDriveHud(c);
+  };
+
+  P.steerAround = function (c, x, pivotY, angle) {
+    if (!angle) return;
+    c.translate(x, pivotY); c.rotate(angle); c.translate(-x, -pivotY);
   };
 
   P.drawRoadEvent = function (c, e) {

@@ -75,7 +75,9 @@ Edit this transparent PNG vehicle sprite. Preserve the existing alpha transparen
 
 ## 会話パートの立ち絵（差し替え用・未生成）
 
-現在の立ち絵は `js/portraits.js` がコードで描くSVGです。生成画像に差し替える場合は、以下のプロンプトで人物ごと・表情ごとに生成し、`assets/images/chara-<人物キー>-<表情>.png` として保存してください。そのうえで `js/story.js` の `CHARACTERS.<人物キー>.art` に、使う表情だけパスを登録します（例: `art: { normal: "assets/images/chara-senpai-normal.png", smile: "assets/images/chara-senpai-smile.png" }`）。登録のない表情はSVGのまま表示されます。
+現在の立ち絵は `js/portraits.js` がコードで描くSVGです。生成画像に差し替える場合は、以下のプロンプトで人物ごと・表情ごとに生成し、`assets/images/chara-<人物キー>-<表情>.png` として保存してください。そのうえで `js/story.js` の `CHARACTERS.<人物キー>.art` に、使う表情だけパスを登録します（例: `art: { normal: "assets/images/chara-senpai-normal.png", smile: "assets/images/chara-senpai-smile.png" }`）。`normal`だけを登録すると、その1枚をすべての表情で使います（背景を切り抜いた写真1枚でも差し替え可能）。`normal`がなく他の表情だけを登録した場合、登録のない表情はSVGのまま表示されます。
+
+写真から作る場合: ホームページ用の人物写真（`company-president.png`、`company-manager-*.png`）などを、Windows 11の「ペイント」の背景の削除などで背景を透明にし、胸から上が入るように切り出してPNGで保存します。
 
 - 表情キー: `normal`（通常）、`smile`（笑顔）、`serious`（真剣）、`surprised`（驚き）、`cheer`（大喜び）、`concern`（心配）
 - 画像: 縦長 400:520、胸から上、正面やや斜め、背景透過、顔の位置と大きさを全員でそろえる

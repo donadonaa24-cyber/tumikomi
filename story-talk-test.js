@@ -84,6 +84,8 @@ Object.keys(Story.CHARACTERS).forEach(function (key) {
 Story.CHARACTERS.senpai.art = { smile: "assets/images/example.png" };
 assert.strictEqual(Story.portrait("senpai", "smile"), "assets/images/example.png", "An image path replaces the SVG for that expression");
 assert(Story.portrait("senpai", "normal").startsWith("data:image/svg+xml"), "Other expressions keep the SVG");
+Story.CHARACTERS.senpai.art = { normal: "assets/images/example-photo.png" };
+assert.strictEqual(Story.portrait("senpai", "cheer"), "assets/images/example-photo.png", "A single normal image covers every expression");
 Story.CHARACTERS.senpai.art = null;
 assert(/全部積み終えると/.test(Story.briefing(StageData.stages[4]).map((l) => l.text).join("")), "Mission 05 briefing must hint at the urgent extra order");
 

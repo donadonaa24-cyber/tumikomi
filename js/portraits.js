@@ -221,8 +221,9 @@
   }
 
   function url(key, expression, art) {
+    // A registered image wins; a single "normal" image (e.g. a cut-out photo) stands in for every expression.
     if (art && art[expression]) return art[expression];
-    if (art && art.normal && !CAST[key]) return art.normal;
+    if (art && art.normal) return art.normal;
     return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg(key, expression));
   }
 

@@ -103,7 +103,8 @@ UnityのScene、Prefab、C#スクリプトは存在しない。相当する構�
 ### `js/portraits.js`
 
 - 6人の立ち絵を共通パーツ（体・服・髪・目・眉・口・眼鏡・ヘルメット）から組み立てるSVG生成器。表情は通常・笑顔・真剣・驚き・大喜び・心配。
-- `Portraits.url(key, face, art)`は、`art[face]`に画像パスがあればそれを、なければSVGのデータURLを返す。
+- `Portraits.url(key, face, art)`は、`art[face]`に画像パスがあればそれを、なければ`art.normal`を、どちらもなければSVGのデータURLを返す。
+- 車線変更の傾きは`road.steer`（目標車線への残り距離から求め、滑らかに追従）で、`steerAround`により後輪付近を軸に回転して描く。
 
 ### `js/story.js`
 
