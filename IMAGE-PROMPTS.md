@@ -73,9 +73,11 @@ Edit this transparent PNG vehicle sprite. Preserve the existing alpha transparen
 
 注意: 普通車の生成出力には不透明な背景が残ったため、ゲーム描画時に車体輪郭のクリッピングを適用しています。透過PNGとしては扱っていません。車両・道路の画像は装飾用で、接触判定はゲーム内座標で管理します。
 
-## 会話パートの立ち絵（差し替え用・未生成）
+## 会話パートの立ち絵（2026年10月11日生成）
 
-現在の立ち絵は `js/portraits.js` がコードで描くSVGです。生成画像に差し替える場合は、以下のプロンプトで人物ごと・表情ごとに生成し、`assets/images/chara-<人物キー>-<表情>.png` として保存してください。そのうえで `js/story.js` の `CHARACTERS.<人物キー>.art` に、使う表情だけパスを登録します（例: `art: { normal: "assets/images/chara-senpai-normal.png", smile: "assets/images/chara-senpai-smile.png" }`）。`normal`だけを登録すると、その1枚をすべての表情で使います（背景を切り抜いた写真1枚でも差し替え可能）。`normal`がなく他の表情だけを登録した場合、登録のない表情はSVGのまま表示されます。
+方式: Codex CLI（`codex exec`）の組み込み画像生成。生成した6枚（各1024×1536、背景透過PNG）を、Web表示用に512×768へ縮小して `assets/images/chara-<人物キー>-normal.png` に保存し、`js/story.js` の `CHARACTERS.<人物キー>.art.normal` に登録済み。代表取締役・東湾統括部長・中京営業所長・西日本統括部長は、ホームページの人物写真（`company-president.png`、`company-manager-east.png`、`company-manager-central.png`、`company-manager-west.png`）を参考画像として渡し、同じ人物と分かる絵柄で描かせた。先輩乗務員と同期は参考画像なし。各人物は通常の表情1枚で、すべての表情にその1枚を使う。`js/portraits.js` のSVGは画像を登録しない場合の代わりとして残している。
+
+表情ごとの画像を追加する場合や作り直す場合は、以下のプロンプトで人物ごと・表情ごとに生成し、`assets/images/chara-<人物キー>-<表情>.png` として保存してください。そのうえで `js/story.js` の `CHARACTERS.<人物キー>.art` に、使う表情だけパスを登録します（例: `art: { normal: "assets/images/chara-senpai-normal.png", smile: "assets/images/chara-senpai-smile.png" }`）。`normal`だけを登録すると、その1枚をすべての表情で使います（背景を切り抜いた写真1枚でも差し替え可能）。`normal`がなく他の表情だけを登録した場合、登録のない表情はSVGのまま表示されます。
 
 写真から作る場合: ホームページ用の人物写真（`company-president.png`、`company-manager-*.png`）などを、Windows 11の「ペイント」の背景の削除などで背景を透明にし、胸から上が入るように切り出してPNGで保存します。
 

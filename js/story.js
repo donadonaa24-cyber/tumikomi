@@ -1,14 +1,15 @@
 (function () {
   "use strict";
 
-  // All people are fictional. Illustrations come from js/portraits.js; set `art` to image paths to replace them.
+  // All people are fictional. `art` points at AI-generated illustrations (see IMAGE-PROMPTS.md);
+  // without it, js/portraits.js draws an SVG stand-in.
   const CHARACTERS = {
-    president: { name: "水城 蒼太", role: "代表取締役", color: "#4aa8ff", initial: "水", art: null },
-    east: { name: "青柳 直樹", role: "東湾統括部長", color: "#4aa8ff", initial: "青", art: null },
-    central: { name: "森川 遥", role: "中京営業所長", color: "#4aa8ff", initial: "森", art: null },
-    west: { name: "結城 慎吾", role: "西日本統括部長", color: "#4aa8ff", initial: "結", art: null },
-    senpai: { name: "早瀬 陸", role: "先輩乗務員", color: "#25d391", initial: "陸", art: null },
-    doki: { name: "小田 ひより", role: "同期・荷役スタッフ", color: "#ffbd59", initial: "ひ", art: null }
+    president: { name: "水城 蒼太", role: "代表取締役", color: "#4aa8ff", initial: "水", art: { normal: "assets/images/chara-president-normal.png" } },
+    east: { name: "青柳 直樹", role: "東湾統括部長", color: "#4aa8ff", initial: "青", art: { normal: "assets/images/chara-east-normal.png" } },
+    central: { name: "森川 遥", role: "中京営業所長", color: "#4aa8ff", initial: "森", art: { normal: "assets/images/chara-central-normal.png" } },
+    west: { name: "結城 慎吾", role: "西日本統括部長", color: "#4aa8ff", initial: "結", art: { normal: "assets/images/chara-west-normal.png" } },
+    senpai: { name: "早瀬 陸", role: "先輩乗務員", color: "#25d391", initial: "陸", art: { normal: "assets/images/chara-senpai-normal.png" } },
+    doki: { name: "小田 ひより", role: "同期・荷役スタッフ", color: "#ffbd59", initial: "ひ", art: { normal: "assets/images/chara-doki-normal.png" } }
   };
 
   // The manager who briefs a mission also evaluates it.

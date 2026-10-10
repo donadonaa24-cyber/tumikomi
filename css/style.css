@@ -1149,7 +1149,7 @@ canvas:fullscreen { width: 100vw; height: 100dvh; object-fit: contain; backgroun
   display: grid;
   grid-template-rows: 1fr auto;
   padding: 0 max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
-  background: radial-gradient(ellipse at 50% 100%, rgba(37,211,145,.14), transparent 60%), linear-gradient(180deg, rgba(7,11,18,.55), rgba(7,11,18,.94));
+  background: radial-gradient(ellipse at 50% 100%, rgba(37,211,145,.14), transparent 60%), linear-gradient(180deg, rgba(7,11,18,.8), rgba(7,11,18,.96));
   opacity: 0;
   visibility: hidden;
   transition: opacity .22s ease, visibility .22s ease;

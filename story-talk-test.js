@@ -78,15 +78,25 @@ Object.keys(Story.CHARACTERS).forEach(function (key) {
   Portraits.EXPRESSIONS.forEach(function (face) {
     const svg = Portraits.svg(key, face);
     assert(/^<svg[\s\S]*<\/svg>$/.test(svg) && svg.length > 2000, key + "/" + face + " must render an illustration");
-    assert(Story.portrait(key, face).startsWith("data:image/svg+xml"), "Illustrations are inline SVG until replaced");
+    assert.strictEqual(Story.portrait(key, face), "assets/images/chara-" + key + "-normal.png", "Each character uses its generated illustration for every expression");
   });
 });
+Object.keys(Story.CHARACTERS).forEach(function (key) {
+  const file = "assets/images/chara-" + key + "-normal.png";
+  assert(fs.existsSync(file), "Generated illustration is missing: " + file);
+  const png = fs.readFileSync(file);
+  assert(png.readUInt32BE(0) === 0x89504e47 && png[25] === 6, file + " must be an RGBA PNG (transparent background)");
+});
+const savedArt = Story.CHARACTERS.senpai.art;
+assert(Story.portrait("senpai", "normal") !== Portraits.url("senpai", "normal"), "The SVG stays available as a stand-in");
 Story.CHARACTERS.senpai.art = { smile: "assets/images/example.png" };
 assert.strictEqual(Story.portrait("senpai", "smile"), "assets/images/example.png", "An image path replaces the SVG for that expression");
 assert(Story.portrait("senpai", "normal").startsWith("data:image/svg+xml"), "Other expressions keep the SVG");
 Story.CHARACTERS.senpai.art = { normal: "assets/images/example-photo.png" };
 assert.strictEqual(Story.portrait("senpai", "cheer"), "assets/images/example-photo.png", "A single normal image covers every expression");
 Story.CHARACTERS.senpai.art = null;
+assert(Story.portrait("senpai", "normal").startsWith("data:image/svg+xml"), "Without art the SVG stand-in is drawn");
+Story.CHARACTERS.senpai.art = savedArt;
 assert(/全部積み終えると/.test(Story.briefing(StageData.stages[4]).map((l) => l.text).join("")), "Mission 05 briefing must hint at the urgent extra order");
 
 const mission1 = StageData.stages[0];
@@ -141,7 +151,7 @@ assert.strictEqual(started.length, 0, "The mission (and its timer) must wait for
 const figures = elements.talkStage.children.slice(-3);
 assert.deepStrictEqual(figures.map((f) => f.getAttribute("data-speaker")), ["central", "senpai", "doki"], "The cast stands on stage together");
 assert(figures[0].classList.contains("is-speaking") && !figures[1].classList.contains("is-speaking"), "Only the speaker is highlighted");
-assert(figures[0].image.src.startsWith("data:image/svg+xml"), "Figures show illustrations");
+assert.strictEqual(figures[0].image.src, "assets/images/chara-central-normal.png", "Figures show the generated illustrations");
 assert.strictEqual(elements.talkName.textContent, "森川 遥");
 elements.talkNext.click(); elements.talkNext.click();
 assert(figures[1].classList.contains("is-speaking"), "The highlight follows the speaker");
